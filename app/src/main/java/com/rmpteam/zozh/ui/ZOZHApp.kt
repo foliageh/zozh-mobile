@@ -93,17 +93,26 @@ fun ZOZHApp() {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                ZOZHTopBar(
-                    screenInfo = screenInfo,
-                    onOpenDrawer = { 
-                        // Only allow opening drawer if authenticated and profile complete
-                        if (enableDrawer) {
+                // Conditionally display TopAppBar
+                if (screenInfo.showAppBar && enableDrawer) { // Show only if screen allows AND user is fully set up
+                    ZOZHTopBar(
+                        screenInfo = screenInfo,
+                        onOpenDrawer = { 
                             coroutineScope.launch { drawerState.open() }
-                        }
-                    },
-                    onNavigateBack = { navController.navigateUp() },
-                    enableMenu = enableDrawer
-                )
+                        },
+                        onNavigateBack = { navController.navigateUp() },
+                        enableMenu = enableDrawer // enableMenu is true here because enableDrawer is true
+                    )
+                } else if (screenInfo.showAppBar && screenInfo.withBackButton && isAuthScreen && !enableDrawer) {
+                    // Special case for auth screens like Register that have a back button but no drawer menu
+                    // and AppBar should be shown according to their ScreenInfo, but drawer is not enabled.
+                     ZOZHTopBar(
+                        screenInfo = screenInfo,
+                        onOpenDrawer = { /* No drawer */ },
+                        onNavigateBack = { navController.navigateUp() },
+                        enableMenu = false // No menu for these screens
+                    )
+                }
             },
             floatingActionButton = {
                 // Only show floating button if authenticated and profile complete

@@ -11,7 +11,8 @@ data class ScreenInfo(
     val showFloatingButton: Boolean = false,
     var floatingButtonAction: (() -> Unit)? = null,
     val floatingButtonIcon: ImageVector? = Icons.Filled.Add,
-    val floatingButtonDescription: String? = "Добавить"
+    val floatingButtonDescription: String? = "Добавить",
+    val showAppBar: Boolean = true
 )
 
 sealed class Screen {
@@ -60,14 +61,17 @@ sealed class Screen {
             
             // Auth and Profile screens info
             Login::class to ScreenInfo(
-                title = "Вход"
+                title = "Вход",
+                showAppBar = false
             ),
             Register::class to ScreenInfo(
                 title = "Регистрация",
-                withBackButton = true
+                withBackButton = true,
+                showAppBar = false
             ),
             ProfileSetup::class to ScreenInfo(
-                title = "Настройка профиля"
+                title = "Настройка профиля",
+                showAppBar = false
             ),
             Settings::class to ScreenInfo(
                 title = "Настройки",
@@ -76,7 +80,8 @@ sealed class Screen {
             
             // Splash screen has no info display
             Splash::class to ScreenInfo(
-                title = ""
+                title = "",
+                showAppBar = false
             )
         )
     }
