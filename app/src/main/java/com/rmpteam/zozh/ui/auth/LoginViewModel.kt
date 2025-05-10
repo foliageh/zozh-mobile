@@ -33,7 +33,7 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
         viewModelScope.launch {
             val result = userRepository.login(uiState.value.username, uiState.value.password)
             result.fold(
-                onSuccess = { userProfile -> // UserProfile is returned on success
+                onSuccess = { userProfile ->
                     val profileComplete = userProfile.weight != null &&
                                           userProfile.height != null &&
                                           userProfile.gender != null &&
@@ -65,7 +65,6 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     }
     
     fun onLoginNavigationHandled() {
-        // Reset navigation triggers after navigation has occurred
         _uiState.update { it.copy(loginSucceeded = false, loggedInUser = null, requiresProfileSetup = null) }
     }
 } 

@@ -20,25 +20,13 @@ fun LoginScreen(
     val viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Navigate on login success
     LaunchedEffect(uiState.loginSucceeded, uiState.requiresProfileSetup) {
         if (uiState.loginSucceeded && uiState.requiresProfileSetup != null) {
             onLoginSuccessNavigation(uiState.requiresProfileSetup!!)
-            viewModel.onLoginNavigationHandled() // Reset the event
+            viewModel.onLoginNavigationHandled()
         }
     }
     
-    // Check if user is already logged in (e.g. from previous session via DataStore)
-    // This initial check should ideally happen before navigating to LoginScreen,
-    // typically in a higher-level navigator or splash screen.
-    // For now, if UserRepository indicates a user is already logged in when LoginScreen is shown,
-    // it might imply an issue with navigation logic or that this check is redundant here
-    // if AppNavGraph already handles it.
-    // If we keep a check here, it should use the ViewModel that observes UserRepository.
-    // However, LoginViewModel itself doesn't have a direct currentUser state, it acts on login attempts.
-    // This was previously: userRepository.getCurrentUser().collect { if (it != null) onLoginSuccess() }
-    // This kind of check is now implicitly handled by the navigation graph listening to userRepository.getCurrentUser()
-
     Column(
         modifier = modifier
             .fillMaxSize()

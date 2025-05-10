@@ -7,7 +7,7 @@ data class LoginUiState(
     val password: String = "",
     val errorMessage: String? = null,
     val isLoading: Boolean = false,
-    val loginSucceeded: Boolean = false, // Renamed for clarity
-    val loggedInUser: UserProfile? = null, // To hold the user profile upon successful login
-    val requiresProfileSetup: Boolean? = null // To signal navigation path
+    val loginSucceeded: Boolean = false,
+    val loggedInUser: UserProfile? = null,
+    val requiresProfileSetup: Boolean? = null 
 ) 

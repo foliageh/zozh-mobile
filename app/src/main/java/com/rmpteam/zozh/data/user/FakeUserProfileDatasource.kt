@@ -6,16 +6,11 @@ import java.util.UUID
 object FakeUserProfileDatasource {
     private val users = mutableListOf<UserProfile>()
 
-    // For initial testing, add a predefined user
-    init {
-        // users.add(UserProfile(id = UUID.randomUUID().toString(), username = "test", password = "test"))
-    }
-
     fun addUser(user: UserProfile): Result<UserProfile> {
         if (users.any { it.username == user.username }) {
             return Result.failure(Exception("User with username '${user.username}' already exists."))
         }
-        val newUser = user.copy(id = UUID.randomUUID().toString()) // Ensure unique ID
+        val newUser = user.copy(id = UUID.randomUUID().toString())
         users.add(newUser)
         return Result.success(newUser)
     }

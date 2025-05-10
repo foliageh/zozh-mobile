@@ -16,7 +16,6 @@ class UserPreferencesRepository(
     private val dataStore: DataStore<Preferences>
 ) {
     private companion object {
-        // Key for storing the UserProfile as a JSON string
         val CURRENT_USER_PROFILE_JSON = stringPreferencesKey("current_user_profile_json")
     }
 
@@ -25,8 +24,6 @@ class UserPreferencesRepository(
             if (it is IOException) {
                 emit(emptyPreferences())
             } else {
-                // Consider logging the error or handling it differently
-                // For now, rethrow if it's not an IOException, as it might be a serialization issue
                 throw it
             }
         }
@@ -35,8 +32,6 @@ class UserPreferencesRepository(
                 try {
                     Json.decodeFromString<UserProfile>(it)
                 } catch (e: Exception) {
-                    // Log error, clear invalid data, and return null
-                    // This handles cases where the stored JSON is malformed or UserProfile structure changed
                     dataStore.edit { prefs -> prefs.remove(CURRENT_USER_PROFILE_JSON) }
                     null 
                 }
@@ -63,9 +58,7 @@ class UserPreferencesRepository(
         }
     }
 
-    // Optional: Keep calorie methods if they are still needed and separate from UserProfile
-    // If calories are part of UserProfile, these might be redundant or need adjustment
-    private val CALORIES = stringPreferencesKey("calories_pref_independent") // Renamed to avoid conflict if UserProfile also has 'calories'
+    private val CALORIES = stringPreferencesKey("calories_pref_independent")
 
     val caloriesPreference: Flow<Int?> = dataStore.data
         .catch {
@@ -74,7 +67,7 @@ class UserPreferencesRepository(
             } else throw it
         }
         .map { preferences ->
-            preferences[CALORIES]?.toIntOrNull() ?: 2100 // Default value
+            preferences[CALORIES]?.toIntOrNull() ?: 2100
         }
 
     suspend fun saveCaloriesPreference(calories: Int?) {
