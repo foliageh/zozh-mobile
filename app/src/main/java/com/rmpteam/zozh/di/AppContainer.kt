@@ -27,7 +27,10 @@ class OfflineAppContainer(private val context: Context) : AppContainer {
     }
     
     override val userRepository: UserRepository by lazy {
-        OfflineUserRepository(CommonDatabase.getDatabase(context).userDao())
+        OfflineUserRepository(
+            CommonDatabase.getDatabase(context).userDao(),
+            userPreferencesRepository
+        )
     }
 }
 

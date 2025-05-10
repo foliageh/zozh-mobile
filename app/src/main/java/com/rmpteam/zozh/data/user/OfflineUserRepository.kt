@@ -5,20 +5,30 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class OfflineUserRepository(private val userDao: UserDao) : UserRepository {
+class OfflineUserRepository(
+    private val userDao: UserDao,
+    private val userPreferencesRepository: UserPreferencesRepository
+) : UserRepository {
     // In-memory cache of the current logged-in user
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
+    private val coroutineScope = MainScope()
     
     init {
         // For debugging: Check if we need to create a test user
         createTestUserIfNeeded()
+        
+        // Restore user session if available
+        coroutineScope.launch {
+            restoreUserSession()
+        }
     }
     
     // Debug function to create a test user for easier testing
     private fun createTestUserIfNeeded() {
-        MainScope().launch {
+        coroutineScope.launch {
             val testUser = userDao.getUserByCredentials("test", "test")
             if (testUser == null) {
                 // Create a test user with a complete profile
@@ -33,6 +43,16 @@ class OfflineUserRepository(private val userDao: UserDao) : UserRepository {
                     goal = WeightGoal.MAINTAIN_WEIGHT
                 )
                 userDao.insert(newTestUser)
+            }
+        }
+    }
+    
+    private suspend fun restoreUserSession() {
+        val savedUserId = userPreferencesRepository.currentUserId.first()
+        if (savedUserId != null) {
+            val user = userDao.getUserById(savedUserId).first()
+            if (user != null) {
+                _currentUser.value = user
             }
         }
     }
@@ -63,6 +83,7 @@ class OfflineUserRepository(private val userDao: UserDao) : UserRepository {
         // If this is the currently logged-in user, clear the flow
         if (_currentUser.value?.id == userProfile.id) {
             _currentUser.value = null
+            userPreferencesRepository.saveCurrentUserId(null)
         }
     }
     
@@ -70,6 +91,7 @@ class OfflineUserRepository(private val userDao: UserDao) : UserRepository {
         val user = userDao.getUserByCredentials(username, password)
         return if (user != null) {
             setCurrentUser(user)
+            userPreferencesRepository.saveCurrentUserId(user.id)
             Result.success(user)
         } else {
             Result.failure(Exception("Invalid username or password"))
@@ -89,6 +111,7 @@ class OfflineUserRepository(private val userDao: UserDao) : UserRepository {
         insertUser(newUser)
         // After registering a new user, set them as the current user
         setCurrentUser(newUser)
+        userPreferencesRepository.saveCurrentUserId(newUser.id)
         return Result.success(newUser)
     }
     
@@ -96,9 +119,11 @@ class OfflineUserRepository(private val userDao: UserDao) : UserRepository {
     
     override suspend fun setCurrentUser(userProfile: UserProfile?) {
         _currentUser.value = userProfile
+        userPreferencesRepository.saveCurrentUserId(userProfile?.id)
     }
     
     override suspend fun logout() {
         setCurrentUser(null)
+        userPreferencesRepository.saveCurrentUserId(null)
     }
 } 

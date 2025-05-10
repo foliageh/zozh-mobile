@@ -38,6 +38,10 @@ sealed class Screen {
     data object ProfileSetup : Screen()
     @Serializable
     data object Settings : Screen()
+    
+    // Splash screen
+    @Serializable
+    data object Splash : Screen()
 
     companion object {
         val screensInfo = mapOf(
@@ -68,6 +72,11 @@ sealed class Screen {
             Settings::class to ScreenInfo(
                 title = "Настройки",
                 withBackButton = true
+            ),
+            
+            // Splash screen has no info display
+            Splash::class to ScreenInfo(
+                title = ""
             )
         )
     }
