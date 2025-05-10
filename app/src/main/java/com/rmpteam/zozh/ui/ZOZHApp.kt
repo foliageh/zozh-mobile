@@ -154,6 +154,7 @@ fun ZOZHTopBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
+        //scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(),
         navigationIcon = {
             if (screenInfo.withBackButton) {
                 IconButton(onClick = onNavigateBack) {
