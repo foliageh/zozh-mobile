@@ -26,6 +26,18 @@ sealed class Screen {
 
     @Serializable
     data object Other : Screen()
+    
+    // Auth and Profile screens
+    @Serializable
+    data object Auth : Screen()
+    @Serializable
+    data object Login : Screen()
+    @Serializable
+    data object Register : Screen()
+    @Serializable
+    data object ProfileSetup : Screen()
+    @Serializable
+    data object Settings : Screen()
 
     companion object {
         val screensInfo = mapOf(
@@ -40,6 +52,22 @@ sealed class Screen {
 
             Other::class to ScreenInfo(
                 title = "Другое"
+            ),
+            
+            // Auth and Profile screens info
+            Login::class to ScreenInfo(
+                title = "Вход"
+            ),
+            Register::class to ScreenInfo(
+                title = "Регистрация",
+                withBackButton = true
+            ),
+            ProfileSetup::class to ScreenInfo(
+                title = "Настройка профиля"
+            ),
+            Settings::class to ScreenInfo(
+                title = "Настройки",
+                withBackButton = true
             )
         )
     }

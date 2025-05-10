@@ -28,15 +28,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.rmpteam.zozh.data.UserProfile
 import com.rmpteam.zozh.ui.navigation.AppNavDrawerSheet
 import com.rmpteam.zozh.ui.navigation.AppNavHost
 import com.rmpteam.zozh.ui.navigation.Screen
 import com.rmpteam.zozh.ui.navigation.ScreenInfo
+import com.rmpteam.zozh.ui.navigation.userRepository
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,6 +45,22 @@ import kotlinx.coroutines.launch
 fun ZOZHApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: ""
+    
+    // Check if user is authenticated and has a complete profile
+    val currentUser = userRepository.getCurrentUser()
+    val isAuthenticated = currentUser != null
+    val isProfileComplete = isAuthenticated && isProfileComplete(currentUser!!)
+    
+    // Determine if we're in an auth-related screen
+    val isAuthScreen = currentRoute == "auth" || 
+                       currentRoute == "login" || 
+                       currentRoute == "register" || 
+                       currentRoute == "profileSetup"
+    
+    // Only allow the drawer and main UI when authenticated and profile is complete
+    val enableDrawer = isAuthenticated && isProfileComplete && !isAuthScreen
+    
     val screenInfo = remember(navBackStackEntry) {
         Screen.screensInfo.entries.firstOrNull {
             navBackStackEntry?.destination?.hasRoute(it.key) == true
@@ -56,24 +73,35 @@ fun ZOZHApp() {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            AppNavDrawerSheet(
-                navController = navController,
-                drawerState = drawerState
-            )
-        }
+            // Only provide drawer content if authenticated and profile complete
+            if (enableDrawer) {
+                AppNavDrawerSheet(
+                    navController = navController,
+                    drawerState = drawerState
+                )
+            }
+        },
+        // Disable drawer gestures if not authenticated or profile incomplete
+        gesturesEnabled = enableDrawer
     ) {
         Scaffold(
-            //modifier = Modifier.nestedScroll(TopAppBarDefaults.enterAlwaysScrollBehavior().nestedScrollConnection),
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 ZOZHTopBar(
                     screenInfo = screenInfo,
-                    onOpenDrawer = { coroutineScope.launch { drawerState.open() } },
-                    onNavigateBack = { navController.navigateUp() }
+                    onOpenDrawer = { 
+                        // Only allow opening drawer if authenticated and profile complete
+                        if (enableDrawer) {
+                            coroutineScope.launch { drawerState.open() }
+                        }
+                    },
+                    onNavigateBack = { navController.navigateUp() },
+                    enableMenu = enableDrawer
                 )
             },
             floatingActionButton = {
-                if (screenInfo.showFloatingButton) {
+                // Only show floating button if authenticated and profile complete
+                if (enableDrawer && screenInfo.showFloatingButton) {
                     FloatingActionButton(
                         onClick = screenInfo.floatingButtonAction ?: {},
                         shape = MaterialTheme.shapes.medium,
@@ -98,12 +126,22 @@ fun ZOZHApp() {
     }
 }
 
+// Helper function to check if profile is complete
+private fun isProfileComplete(user: UserProfile): Boolean {
+    return user.weight != null && 
+           user.height != null && 
+           user.gender != null && 
+           user.age != null && 
+           user.goal != null
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZOZHTopBar(
     screenInfo: ScreenInfo,
     onOpenDrawer: () -> Unit,
     onNavigateBack: () -> Unit,
+    enableMenu: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -111,7 +149,6 @@ fun ZOZHTopBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        //scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(),
         navigationIcon = {
             if (screenInfo.withBackButton) {
                 IconButton(onClick = onNavigateBack) {
@@ -120,7 +157,8 @@ fun ZOZHTopBar(
                         contentDescription = "Назад"
                     )
                 }
-            } else {
+            } else if (enableMenu) {
+                // Only show menu button if enabled (authenticated)
                 IconButton(onClick = onOpenDrawer) {
                     Icon(
                         imageVector = Icons.Default.Menu,

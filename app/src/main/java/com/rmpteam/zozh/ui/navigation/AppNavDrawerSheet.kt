@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dining
 import androidx.compose.material.icons.rounded.Outlet
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,11 +29,14 @@ import kotlinx.coroutines.launch
 data class NavItemInfo(
     val id: Int,
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val screenRoute: Screen
 )
-val navItems = mapOf(
-    Screen.Nutrition to NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining),
-    Screen.Other to NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet)
+
+val navItems = listOf(
+    NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining, screenRoute = Screen.Nutrition),
+    NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet, screenRoute = Screen.Other),
+    NavItemInfo(id = 2, title = "Настройки", icon = Icons.Rounded.Settings, screenRoute = Screen.Settings)
 )
 
 @Composable
@@ -44,6 +48,21 @@ fun AppNavDrawerSheet(
     val coroutineScope = rememberCoroutineScope()
     var currentNavItemId by rememberSaveable { mutableIntStateOf(0) }
 
+    // Verify that user is authenticated and profile is set up
+    val currentUser = userRepository.getCurrentUser()
+    val isAuthenticated = currentUser != null
+    val isProfileComplete = isAuthenticated && 
+                          currentUser!!.weight != null && 
+                          currentUser.height != null &&
+                          currentUser.gender != null && 
+                          currentUser.age != null && 
+                          currentUser.goal != null
+
+    // If not authenticated or profile not complete, don't show drawer content
+    if (!isAuthenticated || !isProfileComplete) {
+        return
+    }
+
     ModalDrawerSheet {
         Text(
             text = "ZOZH",
@@ -51,7 +70,7 @@ fun AppNavDrawerSheet(
             modifier = Modifier.padding(16.dp)
         )
         HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
-        navItems.forEach { (screen, navItemInfo) ->
+        navItems.forEach { navItemInfo ->
             NavigationDrawerItem(
                 icon = {
                     Icon(
@@ -69,9 +88,15 @@ fun AppNavDrawerSheet(
                 selected = currentNavItemId == navItemInfo.id,
                 onClick = {
                     coroutineScope.launch { drawerState.close() }
+                    
                     if (currentNavItemId != navItemInfo.id) {
                         currentNavItemId = navItemInfo.id
-                        navController.navigate(screen)
+                        
+                        // Navigate using Screen objects
+                        navController.navigate(navItemInfo.screenRoute) {
+                            // Single top prevents multiple copies of the same destination
+                            launchSingleTop = true
+                        }
                     }
                 },
                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
