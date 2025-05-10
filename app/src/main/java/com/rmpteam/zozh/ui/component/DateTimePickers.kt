@@ -42,29 +42,27 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
+import com.rmpteam.zozh.util.DateTimeUtil
+import com.rmpteam.zozh.util.DateTimeUtil.dateTimeString
+import com.rmpteam.zozh.util.DateTimeUtil.toEpochMilli
+import com.rmpteam.zozh.util.DateTimeUtil.zoneOffsetMilli
+import java.time.ZonedDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerModal(
-    value: LocalDate,
-    onConfirm: (LocalDate) -> Unit,
+    dateTime: ZonedDateTime,
+    onConfirm: (ZonedDateTime) -> Unit,
     onDismiss: () -> Unit
 ) {
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = value.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        initialSelectedDateMillis = dateTime.toEpochMilli() + dateTime.zoneOffsetMilli()
     )
 
     DatePickerDialog(
         confirmButton = {
             TextButton(onClick = {
-                onConfirm(Instant.ofEpochMilli(datePickerState.selectedDateMillis!!).atZone(ZoneId.systemDefault()).toLocalDate())
+                onConfirm(DateTimeUtil.epochMilliToDateTime(datePickerState.selectedDateMillis!! - dateTime.zoneOffsetMilli()))
                 onDismiss()
             }) { Text("OK") }
         },
@@ -80,14 +78,14 @@ fun DatePickerModal(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerModal(
-    value: LocalTime,
-    onConfirm: (LocalTime) -> Unit,
+    dateTime: ZonedDateTime,
+    onConfirm: (ZonedDateTime) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val timePickerState = rememberTimePickerState(
-        initialHour = value.hour,
-        initialMinute = value.minute,
-        is24Hour = true,
+        initialHour = dateTime.hour,
+        initialMinute = dateTime.minute,
+        is24Hour = true
     )
 
     var showDial by remember { mutableStateOf(true) }
@@ -96,7 +94,7 @@ fun TimePickerModal(
     else Icons.Filled.AccessTime
 
     TimePickerDialog(
-        onConfirm = { onConfirm(LocalTime.of(timePickerState.hour, timePickerState.minute)) },
+        onConfirm = { onConfirm(dateTime.withHour(timePickerState.hour).withMinute(timePickerState.minute).withSecond(0)) },
         onDismiss = onDismiss,
         toggle = {
             IconButton(onClick = { showDial = !showDial }) {
@@ -166,19 +164,18 @@ fun TimePickerDialog(
 @Composable
 fun DateTimePickerFieldToModal(
     modifier: Modifier = Modifier,
-    value: LocalDateTime = LocalDateTime.now(),
-    onDateTimeSelected: (LocalDateTime) -> Unit,
+    initialDateTime: ZonedDateTime = DateTimeUtil.now(),
+    onDateTimeSelected: (ZonedDateTime) -> Unit,
     label: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     singleLine: Boolean = false
 ) {
     var showDateModal by remember { mutableStateOf(false) }
     var showTimeModal by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf<LocalDate>(value.toLocalDate()) }
-    var selectedTime by remember { mutableStateOf<LocalTime>(value.toLocalTime()) }
+    var selectedDateTime by remember { mutableStateOf(initialDateTime) }
 
     OutlinedTextField(
-        value = value.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")),
+        value = selectedDateTime.dateTimeString(),
         onValueChange = { },
         label = label,
         trailingIcon = {
@@ -201,9 +198,9 @@ fun DateTimePickerFieldToModal(
 
     if (showDateModal) {
         DatePickerModal(
-            value = selectedDate,
-            onConfirm = { date ->
-                selectedDate = date
+            dateTime = selectedDateTime,
+            onConfirm = { dateTime ->
+                selectedDateTime = dateTime.withHour(selectedDateTime.hour).withMinute(selectedDateTime.minute)
                 showDateModal = false
                 showTimeModal = true
             },
@@ -213,11 +210,10 @@ fun DateTimePickerFieldToModal(
 
     if (showTimeModal) {
         TimePickerModal(
-            value = selectedTime,
-            onConfirm = { time ->
-                selectedTime = LocalTime.of(time.hour, time.minute)
-                val dateTime = LocalDateTime.of(selectedDate, selectedTime)
-                onDateTimeSelected(dateTime)
+            dateTime = selectedDateTime,
+            onConfirm = { dateTime ->
+                selectedDateTime = dateTime
+                onDateTimeSelected(selectedDateTime)
                 showTimeModal = false
             },
             onDismiss = { showTimeModal = false }

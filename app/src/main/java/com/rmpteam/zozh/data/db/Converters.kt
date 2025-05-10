@@ -1,31 +1,18 @@
 package com.rmpteam.zozh.data.db
 
 import androidx.room.TypeConverter
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
+import com.rmpteam.zozh.util.DateTimeUtil.epochMilliToDateTime
+import com.rmpteam.zozh.util.DateTimeUtil.toEpochMilli
+import java.time.ZonedDateTime
 
 class Converters {
     @TypeConverter
-    fun toLocalDateTime(value: LocalDateTime?): Long? {
-        return value?.atZone(ZoneId.systemDefault())?.toEpochSecond()
+    fun fromZonedDateTime(dateTime: ZonedDateTime?): Long? {
+        return dateTime?.toEpochMilli()?.div(1000)
     }
 
     @TypeConverter
-    fun fromLocalDateTime(value: Long?): LocalDateTime? {
-        return value?.let {
-            Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).toLocalDateTime()
-        }
-    }
-
-    @TypeConverter
-    fun toLocalDate(value: Long?): LocalDate? {
-        return value?.let { LocalDate.ofEpochDay(it) }
-    }
-
-    @TypeConverter
-    fun fromLocalDate(date: LocalDate?): Long? {
-        return date?.atStartOfDay(ZoneId.systemDefault())?.toEpochSecond()
+    fun toZonedDateTime(epochSecond: Long?): ZonedDateTime? {
+        return epochSecond?.let { epochMilliToDateTime(it * 1000) }
     }
 }

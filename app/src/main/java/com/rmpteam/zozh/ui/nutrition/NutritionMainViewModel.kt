@@ -4,17 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rmpteam.zozh.data.UserPreferencesRepository
 import com.rmpteam.zozh.data.nutrition.MealRepository
+import com.rmpteam.zozh.util.DateTimeUtil
+import com.rmpteam.zozh.util.DateTimeUtil.startOfDay
 import com.rmpteam.zozh.util.FLOW_TIMEOUT_MS
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.time.LocalDate
+import java.time.ZonedDateTime
 
 data class NutritionMainUiState(
-    val date: LocalDate,
+    val date: ZonedDateTime,
     val mealList: List<MealRecord> = emptyList()
 )
 
@@ -26,7 +27,7 @@ class NutritionMainViewModel(
     private val userPreferencesRepository: UserPreferencesRepository,
     mealRepository: MealRepository
 ) : ViewModel() {
-    private val initialDate: LocalDate = LocalDate.now()
+    private val initialDate: ZonedDateTime = DateTimeUtil.now().startOfDay()
 
     val uiState = mealRepository.getMealsByDate(initialDate)
         .map { it.map { meal -> meal.toMealRecord() } }
@@ -49,9 +50,9 @@ class NutritionMainViewModel(
             }
         )
 
-//    fun setCaloriesPreference(calories: Int) {
-//        viewModelScope.launch {
-//            userPreferencesRepository.saveCaloriesPreference(calories)
-//        }
-//    }
+    //fun setCaloriesPreference(calories: Int) {
+    //    viewModelScope.launch {
+    //        userPreferencesRepository.saveCaloriesPreference(calories)
+    //    }
+    //}
 }

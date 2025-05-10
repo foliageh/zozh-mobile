@@ -1,20 +1,26 @@
 package com.rmpteam.zozh.data.nutrition
 
-import java.time.LocalDateTime
+import com.rmpteam.zozh.util.DateTimeUtil
 
 object FakeMealDatasource {
     val mealList = mutableListOf(
         Meal(
             1,
             "Обед",
-            LocalDateTime.of(2025, 5, 9, 14, 25),
+            DateTimeUtil.now(),
             30, 50, 60
         ),
         Meal(
             2,
             "Поздний ужин",
-            LocalDateTime.of(2025, 5, 9, 23, 50),
+            DateTimeUtil.now().minusHours(3),
             20, 19, 44
+        ),
+        Meal(
+            2,
+            "Завтрак",
+            DateTimeUtil.now().minusDays(2),
+            25, 40, 30
         ),
     )
 }

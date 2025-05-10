@@ -9,7 +9,7 @@ import com.rmpteam.zozh.data.nutrition.Meal
 import com.rmpteam.zozh.data.nutrition.MealDao
 import kotlinx.coroutines.Dispatchers
 
-@Database(entities = [Meal::class], version = 1, exportSchema = false)
+@Database(entities = [Meal::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class CommonDatabase : RoomDatabase() {
 

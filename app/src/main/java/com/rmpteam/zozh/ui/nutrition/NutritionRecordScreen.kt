@@ -82,7 +82,7 @@ fun MealInputForm(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         DateTimePickerFieldToModal(
-            value = meal.dateTime,
+            initialDateTime = meal.dateTime,
             onDateTimeSelected = { onValueChange(meal.copy(dateTime = it)) },
             label = { Text(text = "Дата и время") },
             modifier = Modifier.fillMaxWidth(),

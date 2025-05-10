@@ -25,7 +25,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rmpteam.zozh.data.nutrition.FakeMealDatasource
 import com.rmpteam.zozh.di.AppViewModelProvider
 import com.rmpteam.zozh.ui.theme.ZOZHTheme
-import java.time.LocalDate
+import com.rmpteam.zozh.util.DateTimeUtil
+import com.rmpteam.zozh.util.DateTimeUtil.dateString
+import com.rmpteam.zozh.util.DateTimeUtil.startOfDay
+import com.rmpteam.zozh.util.DateTimeUtil.timeString
+import java.time.ZonedDateTime
 
 @Composable
 fun NutritionMainScreen(
@@ -49,7 +53,7 @@ fun NutritionMainScreen(
 @Composable
 fun NutritionMainScreenContent(
     modifier: Modifier = Modifier,
-    date: LocalDate,
+    date: ZonedDateTime,
     mealList: List<MealRecord>,
     onNutritionRecordClick: (mealId: Long) -> Unit
 ) {
@@ -57,7 +61,7 @@ fun NutritionMainScreenContent(
         modifier = modifier.padding(16.dp)
     ) {
         Text(
-            text = "Дата: $date",
+            text = "Дата: ${date.dateString()}",
             style = MaterialTheme.typography.titleLarge
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -82,7 +86,7 @@ fun NutritionList(
                     headlineColor = MaterialTheme.colorScheme.onTertiaryContainer,
                     supportingColor = MaterialTheme.colorScheme.onTertiaryContainer,
                 ),
-                headlineContent = { Text(text = meal.timeString) },
+                headlineContent = { Text(text = meal.dateTime.timeString()) },
                 supportingContent = { Text(text = meal.name) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,7 +103,7 @@ fun NutritionMainScreenPreview() {
     ZOZHTheme {
         NutritionMainScreenContent(
             modifier = Modifier.fillMaxSize(),
-            date = LocalDate.now(),
+            date = DateTimeUtil.now().startOfDay(),
             mealList = FakeMealDatasource.mealList.map { it.toMealRecord() },
             onNutritionRecordClick = {}
         )
