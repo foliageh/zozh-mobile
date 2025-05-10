@@ -1,5 +1,6 @@
 package com.rmpteam.zozh.ui.navigation
 
+import android.content.Context
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -15,13 +16,17 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
@@ -48,19 +53,41 @@ fun AppNavDrawerSheet(
     val coroutineScope = rememberCoroutineScope()
     var currentNavItemId by rememberSaveable { mutableIntStateOf(0) }
 
+    // Get the user repository from context
+    val context = LocalContext.current
+    val userRepository = context.userRepository
+    
     // Verify that user is authenticated and profile is set up
-    val currentUser = userRepository.getCurrentUser()
+    val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
     val isAuthenticated = currentUser != null
     val isProfileComplete = isAuthenticated && 
-                          currentUser!!.weight != null && 
-                          currentUser.height != null &&
-                          currentUser.gender != null && 
-                          currentUser.age != null && 
-                          currentUser.goal != null
+                           currentUser?.weight != null && 
+                           currentUser?.height != null &&
+                           currentUser?.gender != null && 
+                           currentUser?.age != null && 
+                           currentUser?.goal != null
 
     // If not authenticated or profile not complete, don't show drawer content
     if (!isAuthenticated || !isProfileComplete) {
         return
+    }
+
+    // Update navigation based on current destination
+    val currentDestinationRoute = navController.currentBackStackEntry?.destination?.route
+    LaunchedEffect(currentDestinationRoute) {
+        val newIndex = navItems.indexOfFirst { 
+            when (it.screenRoute) {
+                is Screen.Nutrition -> currentDestinationRoute == "Nutrition" || 
+                                      currentDestinationRoute?.startsWith("NutritionMain") == true ||
+                                      currentDestinationRoute?.startsWith("NutritionRecord") == true
+                is Screen.Other -> currentDestinationRoute == "Other"
+                is Screen.Settings -> currentDestinationRoute == "Settings"
+                else -> false
+            }
+        }
+        if (newIndex >= 0) {
+            currentNavItemId = newIndex
+        }
     }
 
     ModalDrawerSheet {
@@ -69,7 +96,18 @@ fun AppNavDrawerSheet(
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(16.dp)
         )
+        
+        // Show username if available
+        currentUser?.let { user ->
+            Text(
+                text = "Привет, ${user.username}!",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+        
         HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
+        
         navItems.forEach { navItemInfo ->
             NavigationDrawerItem(
                 icon = {
@@ -96,6 +134,12 @@ fun AppNavDrawerSheet(
                         navController.navigate(navItemInfo.screenRoute) {
                             // Single top prevents multiple copies of the same destination
                             launchSingleTop = true
+                            // Pop up to the first destination in the current nav graph
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            // Avoid recreating content when reselecting the same destination
+                            restoreState = true
                         }
                     }
                 },

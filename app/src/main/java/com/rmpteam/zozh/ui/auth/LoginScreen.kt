@@ -7,17 +7,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.rmpteam.zozh.data.MockUserRepository
+import com.rmpteam.zozh.data.user.UserProfile
+import com.rmpteam.zozh.data.user.UserRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
-    userRepository: MockUserRepository
+    userRepository: UserRepository
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    var currentUser by remember { mutableStateOf<UserProfile?>(null) }
+
+    LaunchedEffect(Unit) {
+        userRepository.getCurrentUser().collect { 
+            currentUser = it
+            if (it != null) {
+                onLoginSuccess()
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -61,9 +74,11 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                userRepository.login(username, password)
-                    .onSuccess { onLoginSuccess() }
-                    .onFailure { errorMessage = it.message }
+                scope.launch {
+                    userRepository.login(username, password)
+                        .onSuccess { /* onLoginSuccess handled in LaunchedEffect */ }
+                        .onFailure { errorMessage = it.message }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

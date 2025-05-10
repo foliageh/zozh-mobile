@@ -7,13 +7,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.rmpteam.zozh.data.MockUserRepository
+import com.rmpteam.zozh.data.user.UserRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onBackClick: () -> Unit,
-    userRepository: MockUserRepository
+    userRepository: UserRepository
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -21,6 +22,7 @@ fun RegisterScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var isRegistered by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -35,82 +37,88 @@ fun RegisterScreen(
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        if (isRegistered) {
-            // Display success message and back button
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Логин") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Пароль") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Подтверждение пароля") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        errorMessage?.let {
             Text(
-                text = successMessage ?: "Регистрация прошла успешно! Теперь вы можете войти, используя свои учетные данные.",
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+
+        successMessage?.let {
+            Text(
+                text = it,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
-            
-            Button(
-                onClick = onBackClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Вернуться к входу")
-            }
-        } else {
-            // Registration form
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Логин") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            )
+        }
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Пароль") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            )
-
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Подтвердите пароль") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            )
-
-            errorMessage?.let {
-                Text(
-                    text = it,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-
-            Button(
-                onClick = {
-                    if (password != confirmPassword) {
-                        errorMessage = "Пароли не совпадают"
-                        return@Button
-                    }
+        Button(
+            onClick = {
+                errorMessage = null
+                successMessage = null
+                
+                // Simple validation
+                if (username.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                    errorMessage = "Все поля должны быть заполнены"
+                    return@Button
+                }
+                
+                if (password != confirmPassword) {
+                    errorMessage = "Пароли не совпадают"
+                    return@Button
+                }
+                
+                scope.launch {
                     userRepository.register(username, password)
                         .onSuccess { 
+                            successMessage = "Регистрация успешна!"
                             isRegistered = true
-                            successMessage = "Регистрация прошла успешно! Теперь вы можете войти, используя свои учетные данные."
+                            onRegisterSuccess()
                         }
-                        .onFailure { errorMessage = it.message }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Text("Зарегистрироваться")
-            }
+                        .onFailure { 
+                            errorMessage = it.message
+                        }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Text("Зарегистрироваться")
+        }
 
-            TextButton(onClick = onBackClick) {
-                Text("Назад")
-            }
+        TextButton(onClick = onBackClick) {
+            Text("Назад")
         }
     }
 } 

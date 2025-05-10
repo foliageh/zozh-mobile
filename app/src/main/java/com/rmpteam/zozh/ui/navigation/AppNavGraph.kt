@@ -1,24 +1,30 @@
 package com.rmpteam.zozh.ui.navigation
 
+import android.content.Context
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
-import androidx.navigation.toRoute
-import com.rmpteam.zozh.data.MockUserRepository
+import com.rmpteam.zozh.ZOZHApplication
+import com.rmpteam.zozh.data.user.UserRepository
 import com.rmpteam.zozh.ui.auth.LoginScreen
 import com.rmpteam.zozh.ui.auth.RegisterScreen
 import com.rmpteam.zozh.ui.nutrition.NutritionMainScreen
 import com.rmpteam.zozh.ui.nutrition.NutritionRecordScreen
 import com.rmpteam.zozh.ui.profile.ProfileSetupScreen
 import com.rmpteam.zozh.ui.settings.SettingsScreen
+import kotlinx.coroutines.launch
 
-// Create a singleton of the repository for now
-val userRepository = MockUserRepository()
+// Get the user repository from the container
+val Context.userRepository: UserRepository
+    get() = (applicationContext as ZOZHApplication).container.userRepository
 
 @Composable
 fun AppNavHost(
@@ -26,15 +32,19 @@ fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
+    // Get the repository from the context
+    val context = LocalContext.current
+    val userRepository = context.userRepository
+    
     // Get current auth state
-    val currentUser = userRepository.getCurrentUser()
+    val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
     val isAuthenticated = currentUser != null
     val hasCompletedProfile = isAuthenticated && 
-                             currentUser!!.weight != null && 
-                             currentUser.height != null && 
-                             currentUser.gender != null && 
-                             currentUser.age != null && 
-                             currentUser.goal != null
+                             currentUser?.weight != null && 
+                             currentUser?.height != null && 
+                             currentUser?.gender != null && 
+                             currentUser?.age != null && 
+                             currentUser?.goal != null
     
     // Determine starting screen based on auth state
     val startDestination = if (!isAuthenticated) {
@@ -55,7 +65,7 @@ fun AppNavHost(
             composable<Screen.Login> {
                 LoginScreen(
                     onLoginSuccess = {
-                        val user = userRepository.getCurrentUser()
+                        val user = currentUser
                         if (user?.weight == null || user.height == null || 
                             user.gender == null || user.age == null || user.goal == null) {
                             // User hasn't completed profile setup
@@ -121,15 +131,19 @@ fun AppNavHost(
 
         // Settings
         composable<Screen.Settings> {
+            val scope = rememberCoroutineScope()
+            
             SettingsScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },
                 userRepository = userRepository,
                 onLogout = {
-                    userRepository.logout()
-                    navController.navigate(Screen.Auth) {
-                        popUpTo(0) { inclusive = true }
+                    scope.launch {
+                        userRepository.logout()
+                        navController.navigate(Screen.Auth) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 }
             )

@@ -1,6 +1,11 @@
-package com.rmpteam.zozh.data
+package com.rmpteam.zozh.data.user
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "user_profile")
 data class UserProfile(
+    @PrimaryKey
     val id: String,
     var username: String,
     var password: String,

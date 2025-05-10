@@ -1,4 +1,4 @@
-package com.rmpteam.zozh.data
+package com.rmpteam.zozh.data.user
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

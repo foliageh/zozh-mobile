@@ -2,7 +2,7 @@ package com.rmpteam.zozh.ui.nutrition
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.rmpteam.zozh.data.UserPreferencesRepository
+import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.nutrition.MealRepository
 import com.rmpteam.zozh.util.DateTimeUtil
 import com.rmpteam.zozh.util.DateTimeUtil.startOfDay

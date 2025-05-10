@@ -23,16 +23,18 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.rmpteam.zozh.data.UserProfile
+import com.rmpteam.zozh.data.user.UserProfile
 import com.rmpteam.zozh.ui.navigation.AppNavDrawerSheet
 import com.rmpteam.zozh.ui.navigation.AppNavHost
 import com.rmpteam.zozh.ui.navigation.Screen
@@ -47,10 +49,14 @@ fun ZOZHApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: ""
     
+    // Get repository from context
+    val context = LocalContext.current
+    val userRepository = context.userRepository
+    
     // Check if user is authenticated and has a complete profile
-    val currentUser = userRepository.getCurrentUser()
+    val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
     val isAuthenticated = currentUser != null
-    val isProfileComplete = isAuthenticated && isProfileComplete(currentUser!!)
+    val isProfileComplete = isAuthenticated && currentUser?.let { isProfileComplete(it) } ?: false
     
     // Determine if we're in an auth-related screen
     val isAuthScreen = currentRoute == "auth" || 

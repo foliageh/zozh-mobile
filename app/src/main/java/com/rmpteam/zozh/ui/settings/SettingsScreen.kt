@@ -6,24 +6,46 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.rmpteam.zozh.data.Gender
-import com.rmpteam.zozh.data.MockUserRepository
-import com.rmpteam.zozh.data.WeightGoal
+import com.rmpteam.zozh.data.user.Gender
+import com.rmpteam.zozh.data.user.UserProfile
+import com.rmpteam.zozh.data.user.UserRepository
+import com.rmpteam.zozh.data.user.WeightGoal
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    userRepository: MockUserRepository,
+    userRepository: UserRepository,
     onLogout: () -> Unit = {}
 ) {
-    val currentUser = userRepository.getCurrentUser() ?: return
-    
-    var weight by remember { mutableStateOf(currentUser.weight?.toString() ?: "") }
-    var height by remember { mutableStateOf(currentUser.height?.toString() ?: "") }
-    var age by remember { mutableStateOf(currentUser.age?.toString() ?: "") }
-    var selectedGender by remember { mutableStateOf(currentUser.gender) }
-    var selectedGoal by remember { mutableStateOf(currentUser.goal) }
+    val scope = rememberCoroutineScope()
+    var currentUser by remember { mutableStateOf<UserProfile?>(null) }
+    var weight by remember { mutableStateOf("") }
+    var height by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var selectedGender by remember { mutableStateOf<Gender?>(null) }
+    var selectedGoal by remember { mutableStateOf<WeightGoal?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(Unit) {
+        userRepository.getCurrentUser().collect { user ->
+            if (user != null) {
+                currentUser = user
+                weight = user.weight?.toString() ?: ""
+                height = user.height?.toString() ?: ""
+                age = user.age?.toString() ?: ""
+                selectedGender = user.gender
+                selectedGoal = user.goal
+            }
+        }
+    }
+    
+    if (currentUser == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -80,7 +102,10 @@ fun SettingsScreen(
                 FilterChip(
                     selected = selectedGender == gender,
                     onClick = { selectedGender = gender },
-                    label = { Text(gender.name) }
+                    label = { Text(when (gender) {
+                        Gender.MALE -> "Мужской"
+                        Gender.FEMALE -> "Женский"
+                    }) }
                 )
             }
         }
@@ -111,7 +136,7 @@ fun SettingsScreen(
                         text = when (goal) {
                             WeightGoal.LOSE_WEIGHT -> "Похудеть"
                             WeightGoal.GAIN_WEIGHT -> "Набрать вес"
-                            WeightGoal.MAINTAIN_WEIGHT -> "Сохранить вес"
+                            WeightGoal.MAINTAIN_WEIGHT -> "Поддерживать вес"
                         }
                     )
                 }
@@ -144,7 +169,8 @@ fun SettingsScreen(
             Button(
                 onClick = {
                     try {
-                        val updatedProfile = currentUser.copy(
+                        val user = currentUser ?: return@Button
+                        val updatedProfile = user.copy(
                             weight = weight.toFloatOrNull(),
                             height = height.toIntOrNull(),
                             age = age.toIntOrNull(),
@@ -159,8 +185,10 @@ fun SettingsScreen(
                             return@Button
                         }
                         
-                        userRepository.updateProfile(updatedProfile)
-                        onBackClick()
+                        scope.launch {
+                            userRepository.updateUser(updatedProfile)
+                            onBackClick()
+                        }
                     } catch (e: Exception) {
                         errorMessage = "Пожалуйста, проверьте правильность введенных данных"
                     }
@@ -174,8 +202,10 @@ fun SettingsScreen(
         // Logout button
         OutlinedButton(
             onClick = { 
-                userRepository.logout()
-                onLogout()
+                scope.launch {
+                    userRepository.logout()
+                    onLogout()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
