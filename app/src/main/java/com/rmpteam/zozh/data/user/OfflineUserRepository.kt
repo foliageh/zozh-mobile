@@ -1,129 +1,114 @@
 package com.rmpteam.zozh.data.user
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import java.util.UUID
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 class OfflineUserRepository(
-    private val userDao: UserDao,
+    private val fakeUserProfileDatasource: FakeUserProfileDatasource,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : UserRepository {
-    // In-memory cache of the current logged-in user
-    private val _currentUser = MutableStateFlow<UserProfile?>(null)
-    private val coroutineScope = MainScope()
-    
-    init {
-        // For debugging: Check if we need to create a test user
-        createTestUserIfNeeded()
-        
-        // Restore user session if available
-        coroutineScope.launch {
-            restoreUserSession()
-        }
+
+    // getCurrentUser now directly maps from UserPreferencesRepository
+    override fun getCurrentUser(): Flow<UserProfile?> = userPreferencesRepository.currentUserProfile
+
+    override suspend fun setCurrentUser(userProfile: UserProfile?) {
+        userPreferencesRepository.saveCurrentUserProfile(userProfile)
     }
     
-    // Debug function to create a test user for easier testing
-    private fun createTestUserIfNeeded() {
-        coroutineScope.launch {
-            val testUser = userDao.getUserByCredentials("test", "test")
-            if (testUser == null) {
-                // Create a test user with a complete profile
-                val newTestUser = UserProfile(
-                    id = "test-user-id",
-                    username = "test",
-                    password = "test",
-                    weight = 70f,
-                    height = 175,
-                    gender = Gender.MALE,
-                    age = 30,
-                    goal = WeightGoal.MAINTAIN_WEIGHT
-                )
-                userDao.insert(newTestUser)
-            }
-        }
+    // This method might be used by parts of the app that expect to fetch any user, not just current.
+    // It now queries the fake data source.
+    override fun getUserById(id: String): Flow<UserProfile?> {
+        // Fake datasource is not reactive, so we wrap the immediate result in a flow
+        // This is a simplification; for a truly reactive fake, it would need its own Flow
+        return kotlinx.coroutines.flow.flowOf(fakeUserProfileDatasource.findUserById(id))
     }
-    
-    private suspend fun restoreUserSession() {
-        val savedUserId = userPreferencesRepository.currentUserId.first()
-        if (savedUserId != null) {
-            val user = userDao.getUserById(savedUserId).first()
-            if (user != null) {
-                _currentUser.value = user
-            }
-        }
+
+    // This method might be used by admin panels or debug screens.
+    // It now queries the fake data source.
+    override fun getAllUsers(): Flow<List<UserProfile>> {
+        // Similar to getUserById, wrap the list in a flow.
+        // return kotlinx.coroutines.flow.flowOf(fakeUserProfileDatasource.getAllUsers()) 
+        // Assuming FakeUserProfileDatasource does not have getAllUsers, returning empty or could be implemented
+        return kotlinx.coroutines.flow.flowOf(emptyList()) // Placeholder if FakeUserProfileDatasource doesn't expose all users
     }
-    
-    override fun getUserById(id: String): Flow<UserProfile?> = userDao.getUserById(id)
-    
-    override fun getAllUsers(): Flow<List<UserProfile>> = userDao.getAllUsers()
-    
+
+    // This is more for creating users internally, not necessarily part of public API for registration
     override suspend fun insertUser(userProfile: UserProfile): String {
-        userDao.insert(userProfile)
-        // If this is the currently logged-in user, update the flow
-        if (_currentUser.value?.id == userProfile.id) {
-            _currentUser.value = userProfile
-        }
-        return userProfile.id
+        val result = fakeUserProfileDatasource.addUser(userProfile)
+        return result.fold(
+            onSuccess = { it.id },
+            onFailure = { throw it } // Or handle error differently
+        )
     }
-    
+
     override suspend fun updateUser(userProfile: UserProfile) {
-        userDao.update(userProfile)
-        // If this is the currently logged-in user, update the flow
-        if (_currentUser.value?.id == userProfile.id) {
-            _currentUser.value = userProfile
+        val result = fakeUserProfileDatasource.updateUser(userProfile)
+        result.onSuccess { updatedUser ->
+            // If the updated user is the current user, also update DataStore
+            val currentUser = getCurrentUser().firstOrNull()
+            if (currentUser?.id == updatedUser.id) {
+                setCurrentUser(updatedUser)
+            }
+        }.onFailure { 
+            throw it // Or handle error
         }
     }
-    
+
+    // deleteUser might not be needed if users are only in fake source and cleared on restart
+    // If kept, it should remove from FakeUserProfileDatasource and clear from DataStore if it's current user
     override suspend fun deleteUser(userProfile: UserProfile) {
-        userDao.delete(userProfile)
-        // If this is the currently logged-in user, clear the flow
-        if (_currentUser.value?.id == userProfile.id) {
-            _currentUser.value = null
-            userPreferencesRepository.saveCurrentUserId(null)
+        // fakeUserProfileDatasource.removeUser(userProfile.id) // Assuming such a method exists
+        val currentUser = getCurrentUser().firstOrNull()
+        if (currentUser?.id == userProfile.id) {
+            logout()
         }
     }
-    
+
     override suspend fun login(username: String, password: String): Result<UserProfile> {
-        val user = userDao.getUserByCredentials(username, password)
-        return if (user != null) {
+        val user = fakeUserProfileDatasource.findUserByUsername(username)
+        return if (user != null && user.password == password) { // Password check should be more secure in a real app
             setCurrentUser(user)
-            userPreferencesRepository.saveCurrentUserId(user.id)
             Result.success(user)
         } else {
             Result.failure(Exception("Invalid username or password"))
         }
     }
-    
-    override suspend fun register(username: String, password: String): Result<UserProfile> {
-        if (userDao.isUsernameExists(username)) {
-            return Result.failure(Exception("Username already exists"))
-        }
-        
-        val newUser = UserProfile(
-            id = UUID.randomUUID().toString(),
-            username = username,
-            password = password
-        )
-        insertUser(newUser)
-        // After registering a new user, set them as the current user
-        setCurrentUser(newUser)
-        userPreferencesRepository.saveCurrentUserId(newUser.id)
-        return Result.success(newUser)
+
+    // Changed signature to take a UserProfile object, assuming password is set.
+    // ID will be generated by FakeUserProfileDatasource.
+    override suspend fun register(userToRegister: UserProfile): Result<UserProfile> {
+         val result = fakeUserProfileDatasource.addUser(userToRegister)
+         return result.fold(
+             onSuccess = { newUser ->
+                 setCurrentUser(newUser) // Log in the user immediately after registration
+                 Result.success(newUser)
+             },
+             onFailure = {
+                 Result.failure(it)
+             }
+         )
     }
     
-    override fun getCurrentUser(): Flow<UserProfile?> = _currentUser.asStateFlow()
-    
-    override suspend fun setCurrentUser(userProfile: UserProfile?) {
-        _currentUser.value = userProfile
-        userPreferencesRepository.saveCurrentUserId(userProfile?.id)
-    }
-    
+    // Simplified register to match original interface, though less data can be passed.
+    // Consider changing UserRepository interface for register to take more UserProfile details.
+    // For now, implementing the existing interface:
+    // override suspend fun register(username: String, password: String): Result<UserProfile> {
+    //     val existingUser = fakeUserProfileDatasource.findUserByUsername(username)
+    //     if (existingUser != null) {
+    //         return Result.failure(Exception("Username already exists"))
+    //     }
+    //     val newUser = UserProfile(
+    //         id = UUID.randomUUID().toString(), // ID is generated here, FakeUserProfileDatasource also generates one. Choose one source of truth.
+    //         username = username,
+    //         password = password // Store password directly - very insecure for real app
+    //     )
+    //     return register(newUser) // Call the more detailed register method
+    // }
+
+
     override suspend fun logout() {
-        setCurrentUser(null)
-        userPreferencesRepository.saveCurrentUserId(null)
+        userPreferencesRepository.clearCurrentUserProfile()
     }
 } 

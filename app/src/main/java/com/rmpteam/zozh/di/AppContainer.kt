@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.rmpteam.zozh.data.user.FakeUserProfileDatasource
 import com.rmpteam.zozh.data.user.OfflineUserRepository
 import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.user.UserRepository
@@ -15,6 +16,7 @@ interface AppContainer {
     val userPreferencesRepository: UserPreferencesRepository
     val mealRepository: MealRepository
     val userRepository: UserRepository
+    val fakeUserProfileDatasource: FakeUserProfileDatasource
 }
 
 class OfflineAppContainer(private val context: Context) : AppContainer {
@@ -26,10 +28,14 @@ class OfflineAppContainer(private val context: Context) : AppContainer {
         UserPreferencesRepository(context.dataStore)
     }
     
+    override val fakeUserProfileDatasource: FakeUserProfileDatasource by lazy {
+        FakeUserProfileDatasource
+    }
+
     override val userRepository: UserRepository by lazy {
         OfflineUserRepository(
-            CommonDatabase.getDatabase(context).userDao(),
-            userPreferencesRepository
+            fakeUserProfileDatasource = fakeUserProfileDatasource,
+            userPreferencesRepository = userPreferencesRepository
         )
     }
 }

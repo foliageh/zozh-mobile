@@ -9,7 +9,7 @@ interface UserRepository {
     suspend fun updateUser(userProfile: UserProfile)
     suspend fun deleteUser(userProfile: UserProfile)
     suspend fun login(username: String, password: String): Result<UserProfile>
-    suspend fun register(username: String, password: String): Result<UserProfile>
+    suspend fun register(userProfile: UserProfile): Result<UserProfile>
     fun getCurrentUser(): Flow<UserProfile?>
     suspend fun setCurrentUser(userProfile: UserProfile?)
     suspend fun logout()

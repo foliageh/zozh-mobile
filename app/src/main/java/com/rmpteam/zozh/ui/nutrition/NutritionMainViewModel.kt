@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.ZonedDateTime
 
@@ -28,6 +29,7 @@ class NutritionMainViewModel(
     mealRepository: MealRepository
 ) : ViewModel() {
     private val initialDate: ZonedDateTime = DateTimeUtil.now().startOfDay()
+    private val defaultCalories = 2100
 
     val uiState = mealRepository.getMealsByDate(initialDate)
         .map { it.map { meal -> meal.toMealRecord() } }
@@ -38,21 +40,20 @@ class NutritionMainViewModel(
             initialValue = NutritionMainUiState(date = initialDate)
         )
 
-    // какие-то страшные вещи, надо что-то получше придумать с userPreferences
     val userPreferencesUiState =
-        userPreferencesRepository.calories.map { calories ->
-            UserPreferencesUiState(calories = calories)
+        userPreferencesRepository.caloriesPreference.map { calories ->
+            UserPreferencesUiState(calories = calories ?: defaultCalories)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(FLOW_TIMEOUT_MS),
             initialValue = runBlocking {
-                UserPreferencesUiState(calories = userPreferencesRepository.calories.first())
+                UserPreferencesUiState(calories = userPreferencesRepository.caloriesPreference.first() ?: defaultCalories)
             }
         )
 
-    //fun setCaloriesPreference(calories: Int) {
-    //    viewModelScope.launch {
-    //        userPreferencesRepository.saveCaloriesPreference(calories)
-    //    }
-    //}
+    fun setCaloriesPreference(calories: Int) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveCaloriesPreference(calories)
+        }
+    }
 }

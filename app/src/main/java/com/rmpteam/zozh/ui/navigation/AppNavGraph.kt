@@ -71,20 +71,13 @@ fun AppNavHost(
         // Auth Navigation
         navigation<Screen.Auth>(startDestination = Screen.Login) {
             composable<Screen.Login> {
-                // Get current user for use in this composable
-                val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
-                
                 LoginScreen(
-                    onLoginSuccess = {
-                        val user = currentUser
-                        if (user?.weight == null || user.height == null || 
-                            user.gender == null || user.age == null || user.goal == null) {
-                            // User hasn't completed profile setup
+                    onLoginSuccessNavigation = { requiresProfileSetup ->
+                        if (requiresProfileSetup) {
                             navController.navigate(Screen.ProfileSetup) {
                                 popUpTo(Screen.Auth) { inclusive = true }
                             }
                         } else {
-                            // User is fully set up, can access the main app
                             navController.navigate(Screen.Nutrition) {
                                 popUpTo(Screen.Auth) { inclusive = true }
                             }
@@ -92,21 +85,20 @@ fun AppNavHost(
                     },
                     onRegisterClick = {
                         navController.navigate(Screen.Register)
-                    },
-                    userRepository = userRepository
+                    }
                 )
             }
             
             composable<Screen.Register> {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        // After registration, return to login screen
-                        navController.popBackStack()
+                        navController.navigate(Screen.ProfileSetup) {
+                            popUpTo(Screen.Auth) { inclusive = true }
+                        }
                     },
                     onBackClick = {
                         navController.popBackStack()
-                    },
-                    userRepository = userRepository
+                    }
                 )
             }
         }
@@ -115,12 +107,11 @@ fun AppNavHost(
         composable<Screen.ProfileSetup> {
             ProfileSetupScreen(
                 onSetupComplete = {
-                    // Profile setup complete, navigate to main app
                     navController.navigate(Screen.Nutrition) {
                         popUpTo(Screen.ProfileSetup) { inclusive = true }
+                        popUpTo(Screen.Auth) { inclusive = true }
                     }
-                },
-//                userRepository = userRepository
+                }
             )
         }
 
@@ -142,19 +133,13 @@ fun AppNavHost(
 
         // Settings
         composable<Screen.Settings> {
-            val scope = rememberCoroutineScope()
-            
             SettingsScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },
-//                userRepository = userRepository,
                 onLogout = {
-                    scope.launch {
-                        userRepository.logout()
-                        navController.navigate(Screen.Auth) {
-                            popUpTo(0) { inclusive = true }
-                        }
+                    navController.navigate(Screen.Auth) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -207,6 +192,7 @@ fun SplashScreenContent(
     
     // Check authentication status and navigate accordingly
     LaunchedEffect(Unit) {
+        delay(1500) // Simulate loading/splash time
         val currentUser = userRepository.getCurrentUser().first()
         
         val destination = if (currentUser != null) {

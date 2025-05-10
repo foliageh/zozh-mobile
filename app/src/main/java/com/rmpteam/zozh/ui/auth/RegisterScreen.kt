@@ -7,25 +7,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.rmpteam.zozh.data.user.UserRepository
-import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rmpteam.zozh.di.AppViewModelProvider
 
 @Composable
 fun RegisterScreen(
+    modifier: Modifier = Modifier,
     onRegisterSuccess: () -> Unit,
-    onBackClick: () -> Unit,
-    userRepository: UserRepository
+    onBackClick: () -> Unit
 ) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
-    var isRegistered by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    val viewModel: RegisterViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(uiState.registrationSuccess) {
+        if (uiState.registrationSuccess) {
+            onRegisterSuccess()
+            viewModel.onRegistrationHandled() // Reset the event
+        }
+    }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -38,35 +41,38 @@ fun RegisterScreen(
         )
 
         OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
+            value = uiState.username,
+            onValueChange = { viewModel.updateUsername(it) },
             label = { Text("Логин") },
+            isError = uiState.errorMessage != null, // Show error on relevant fields
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
 
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = uiState.password,
+            onValueChange = { viewModel.updatePassword(it) },
             label = { Text("Пароль") },
             visualTransformation = PasswordVisualTransformation(),
+            isError = uiState.errorMessage?.contains("Пароли") == true || uiState.errorMessage?.contains("поля") == true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
 
         OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            value = uiState.confirmPassword,
+            onValueChange = { viewModel.updateConfirmPassword(it) },
             label = { Text("Подтверждение пароля") },
             visualTransformation = PasswordVisualTransformation(),
+            isError = uiState.errorMessage?.contains("Пароли") == true || uiState.errorMessage?.contains("поля") == true,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
 
-        errorMessage?.let {
+        uiState.errorMessage?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
@@ -74,50 +80,27 @@ fun RegisterScreen(
             )
         }
 
-        successMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+        // Success message is implicitly handled by navigation via registrationSuccess state
+        // No need for a separate successMessage Text field if navigating away.
+
+        if (uiState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+        } else {
+            Button(
+                onClick = { viewModel.registerUser() },
+                enabled = !uiState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text("Зарегистрироваться")
+            }
         }
 
-        Button(
-            onClick = {
-                errorMessage = null
-                successMessage = null
-                
-                // Simple validation
-                if (username.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-                    errorMessage = "Все поля должны быть заполнены"
-                    return@Button
-                }
-                
-                if (password != confirmPassword) {
-                    errorMessage = "Пароли не совпадают"
-                    return@Button
-                }
-                
-                scope.launch {
-                    userRepository.register(username, password)
-                        .onSuccess { 
-                            successMessage = "Регистрация успешна!"
-                            isRegistered = true
-                            onRegisterSuccess()
-                        }
-                        .onFailure { 
-                            errorMessage = it.message
-                        }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
+        TextButton(
+            onClick = onBackClick,
+            enabled = !uiState.isLoading
         ) {
-            Text("Зарегистрироваться")
-        }
-
-        TextButton(onClick = onBackClick) {
             Text("Назад")
         }
     }
