@@ -120,7 +120,7 @@ fun AppNavHost(
                         popUpTo(Screen.ProfileSetup) { inclusive = true }
                     }
                 },
-                userRepository = userRepository
+//                userRepository = userRepository
             )
         }
 
@@ -148,7 +148,7 @@ fun AppNavHost(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                userRepository = userRepository,
+//                userRepository = userRepository,
                 onLogout = {
                     scope.launch {
                         userRepository.logout()

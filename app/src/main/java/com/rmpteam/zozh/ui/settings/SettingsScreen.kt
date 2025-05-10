@@ -6,49 +6,37 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rmpteam.zozh.data.user.Gender
-import com.rmpteam.zozh.data.user.UserProfile
-import com.rmpteam.zozh.data.user.UserRepository
 import com.rmpteam.zozh.data.user.WeightGoal
-import kotlinx.coroutines.launch
+import com.rmpteam.zozh.di.AppViewModelProvider
 
 @Composable
 fun SettingsScreen(
+    modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
-    userRepository: UserRepository,
     onLogout: () -> Unit = {}
 ) {
-    val scope = rememberCoroutineScope()
-    var currentUser by remember { mutableStateOf<UserProfile?>(null) }
-    var weight by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var age by remember { mutableStateOf("") }
-    var selectedGender by remember { mutableStateOf<Gender?>(null) }
-    var selectedGoal by remember { mutableStateOf<WeightGoal?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    
-    LaunchedEffect(Unit) {
-        userRepository.getCurrentUser().collect { user ->
-            if (user != null) {
-                currentUser = user
-                weight = user.weight?.toString() ?: ""
-                height = user.height?.toString() ?: ""
-                age = user.age?.toString() ?: ""
-                selectedGender = user.gender
-                selectedGoal = user.goal
-            }
-        }
-    }
-    
-    if (currentUser == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    val viewModel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    if (uiState.isLoading) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
     }
 
+    if (uiState.currentUser == null && !uiState.isLoading) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Не удалось загрузить данные пользователя.")
+        }
+        return
+    }
+
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -60,8 +48,8 @@ fun SettingsScreen(
         )
 
         OutlinedTextField(
-            value = weight,
-            onValueChange = { weight = it },
+            value = uiState.weight,
+            onValueChange = { viewModel.updateWeight(it) },
             label = { Text("Вес (кг)") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -69,8 +57,8 @@ fun SettingsScreen(
         )
 
         OutlinedTextField(
-            value = height,
-            onValueChange = { height = it },
+            value = uiState.height,
+            onValueChange = { viewModel.updateHeight(it) },
             label = { Text("Рост (см)") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -78,8 +66,8 @@ fun SettingsScreen(
         )
 
         OutlinedTextField(
-            value = age,
-            onValueChange = { age = it },
+            value = uiState.age,
+            onValueChange = { viewModel.updateAge(it) },
             label = { Text("Возраст") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -100,8 +88,8 @@ fun SettingsScreen(
         ) {
             Gender.values().forEach { gender ->
                 FilterChip(
-                    selected = selectedGender == gender,
-                    onClick = { selectedGender = gender },
+                    selected = uiState.selectedGender == gender,
+                    onClick = { viewModel.updateSelectedGender(gender) },
                     label = { Text(when (gender) {
                         Gender.MALE -> "Мужской"
                         Gender.FEMALE -> "Женский"
@@ -129,8 +117,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
-                        selected = selectedGoal == goal,
-                        onClick = { selectedGoal = goal }
+                        selected = uiState.selectedGoal == goal,
+                        onClick = { viewModel.updateSelectedGoal(goal) }
                     )
                     Text(
                         text = when (goal) {
@@ -143,7 +131,7 @@ fun SettingsScreen(
             }
         }
 
-        errorMessage?.let {
+        uiState.errorMessage?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
@@ -167,46 +155,15 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.width(16.dp))
 
             Button(
-                onClick = {
-                    try {
-                        val user = currentUser ?: return@Button
-                        val updatedProfile = user.copy(
-                            weight = weight.toFloatOrNull(),
-                            height = height.toIntOrNull(),
-                            age = age.toIntOrNull(),
-                            gender = selectedGender,
-                            goal = selectedGoal
-                        )
-                        
-                        if (updatedProfile.weight == null || updatedProfile.height == null ||
-                            updatedProfile.age == null || updatedProfile.gender == null ||
-                            updatedProfile.goal == null) {
-                            errorMessage = "Пожалуйста, заполните все поля"
-                            return@Button
-                        }
-                        
-                        scope.launch {
-                            userRepository.updateUser(updatedProfile)
-                            onBackClick()
-                        }
-                    } catch (e: Exception) {
-                        errorMessage = "Пожалуйста, проверьте правильность введенных данных"
-                    }
-                },
+                onClick = { viewModel.saveProfile(onSuccess = onBackClick) },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("Сохранить")
             }
         }
         
-        // Logout button
         OutlinedButton(
-            onClick = { 
-                scope.launch {
-                    userRepository.logout()
-                    onLogout()
-                }
-            },
+            onClick = { viewModel.logout(onSuccess = onLogout) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),

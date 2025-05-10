@@ -6,42 +6,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rmpteam.zozh.data.user.Gender
-import com.rmpteam.zozh.data.user.UserProfile
-import com.rmpteam.zozh.data.user.UserRepository
 import com.rmpteam.zozh.data.user.WeightGoal
-import kotlinx.coroutines.launch
+import com.rmpteam.zozh.di.AppViewModelProvider
 
 @Composable
 fun ProfileSetupScreen(
-    onSetupComplete: () -> Unit,
-    userRepository: UserRepository
+    modifier: Modifier = Modifier,
+    onSetupComplete: () -> Unit
 ) {
-    var weight by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var age by remember { mutableStateOf("") }
-    var selectedGender by remember { mutableStateOf<Gender?>(null) }
-    var selectedGoal by remember { mutableStateOf<WeightGoal?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    var currentUser by remember { mutableStateOf<UserProfile?>(null) }
+    val viewModel: ProfileSetupViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        userRepository.getCurrentUser().collect {
-            currentUser = it
-            // Pre-fill form with existing data if available
-            it?.let { user ->
-                user.weight?.let { weight = it.toString() }
-                user.height?.let { height = it.toString() }
-                user.age?.let { age = it.toString() }
-                selectedGender = user.gender
-                selectedGoal = user.goal
-            }
+    if (uiState.isLoading) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
+        return
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -60,8 +47,8 @@ fun ProfileSetupScreen(
         )
 
         OutlinedTextField(
-            value = weight,
-            onValueChange = { weight = it },
+            value = uiState.weight,
+            onValueChange = { viewModel.updateWeight(it) },
             label = { Text("Вес (кг)") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -69,8 +56,8 @@ fun ProfileSetupScreen(
         )
 
         OutlinedTextField(
-            value = height,
-            onValueChange = { height = it },
+            value = uiState.height,
+            onValueChange = { viewModel.updateHeight(it) },
             label = { Text("Рост (см)") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -78,15 +65,14 @@ fun ProfileSetupScreen(
         )
 
         OutlinedTextField(
-            value = age,
-            onValueChange = { age = it },
+            value = uiState.age,
+            onValueChange = { viewModel.updateAge(it) },
             label = { Text("Возраст") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
 
-        // Gender selection
         Text(
             text = "Пол",
             style = MaterialTheme.typography.bodyLarge,
@@ -108,8 +94,8 @@ fun ProfileSetupScreen(
                         .padding(end = 8.dp)
                 ) {
                     RadioButton(
-                        selected = selectedGender == gender,
-                        onClick = { selectedGender = gender }
+                        selected = uiState.selectedGender == gender,
+                        onClick = { viewModel.updateSelectedGender(gender) }
                     )
                     Text(
                         text = when (gender) {
@@ -121,7 +107,6 @@ fun ProfileSetupScreen(
             }
         }
 
-        // Weight goal selection
         Text(
             text = "Цель",
             style = MaterialTheme.typography.bodyLarge,
@@ -141,8 +126,8 @@ fun ProfileSetupScreen(
                     modifier = Modifier.padding(bottom = 4.dp)
                 ) {
                     RadioButton(
-                        selected = selectedGoal == goal,
-                        onClick = { selectedGoal = goal }
+                        selected = uiState.selectedGoal == goal,
+                        onClick = { viewModel.updateSelectedGoal(goal) }
                     )
                     Text(
                         text = when (goal) {
@@ -155,7 +140,7 @@ fun ProfileSetupScreen(
             }
         }
 
-        errorMessage?.let {
+        uiState.errorMessage?.let {
             Text(
                 text = it,
                 color = MaterialTheme.colorScheme.error,
@@ -164,34 +149,7 @@ fun ProfileSetupScreen(
         }
 
         Button(
-            onClick = {
-                val user = currentUser ?: return@Button
-                
-                try {
-                    val updatedProfile = user.copy(
-                        weight = weight.toFloatOrNull(),
-                        height = height.toIntOrNull(),
-                        age = age.toIntOrNull(),
-                        gender = selectedGender,
-                        goal = selectedGoal
-                    )
-                    
-                    if (updatedProfile.weight == null || updatedProfile.height == null ||
-                        updatedProfile.age == null || updatedProfile.gender == null ||
-                        updatedProfile.goal == null) {
-                        errorMessage = "Пожалуйста, заполните все поля"
-                        return@Button
-                    }
-                    
-                    scope.launch {
-                        userRepository.updateUser(updatedProfile)
-                        userRepository.setCurrentUser(updatedProfile)
-                        onSetupComplete()
-                    }
-                } catch (e: Exception) {
-                    errorMessage = "Пожалуйста, проверьте правильность введенных данных"
-                }
-            },
+            onClick = { viewModel.saveProfile(onSuccess = onSetupComplete) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
