@@ -49,22 +49,18 @@ fun ZOZHApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: ""
     
-    // Get repository from context
     val context = LocalContext.current
     val userRepository = context.userRepository
     
-    // Check if user is authenticated and has a complete profile
     val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
     val isAuthenticated = currentUser != null
     val isProfileComplete = isAuthenticated && currentUser?.let { isProfileComplete(it) } ?: false
     
-    // Determine if we're in an auth-related screen
     val isAuthScreen = currentRoute == "auth" || 
                        currentRoute == "login" || 
                        currentRoute == "register" || 
                        currentRoute == "profileSetup"
     
-    // Only allow the drawer and main UI when authenticated and profile is complete
     val enableDrawer = isAuthenticated && isProfileComplete && !isAuthScreen
     
     val screenInfo = remember(navBackStackEntry) {
@@ -79,7 +75,6 @@ fun ZOZHApp() {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            // Only provide drawer content if authenticated and profile complete
             if (enableDrawer) {
                 AppNavDrawerSheet(
                     navController = navController,
@@ -87,35 +82,31 @@ fun ZOZHApp() {
                 )
             }
         },
-        // Disable drawer gestures if not authenticated or profile incomplete
         gesturesEnabled = enableDrawer
     ) {
         Scaffold(
+            //modifier = Modifier.nestedScroll(TopAppBarDefaults.enterAlwaysScrollBehavior().nestedScrollConnection),
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                // Conditionally display TopAppBar
-                if (screenInfo.showAppBar && enableDrawer) { // Show only if screen allows AND user is fully set up
+                if (screenInfo.showAppBar && enableDrawer) {
                     ZOZHTopBar(
                         screenInfo = screenInfo,
                         onOpenDrawer = { 
                             coroutineScope.launch { drawerState.open() }
                         },
                         onNavigateBack = { navController.navigateUp() },
-                        enableMenu = enableDrawer // enableMenu is true here because enableDrawer is true
+                        enableMenu = enableDrawer
                     )
                 } else if (screenInfo.showAppBar && screenInfo.withBackButton && isAuthScreen && !enableDrawer) {
-                    // Special case for auth screens like Register that have a back button but no drawer menu
-                    // and AppBar should be shown according to their ScreenInfo, but drawer is not enabled.
                      ZOZHTopBar(
                         screenInfo = screenInfo,
-                        onOpenDrawer = { /* No drawer */ },
+                        onOpenDrawer = { },
                         onNavigateBack = { navController.navigateUp() },
-                        enableMenu = false // No menu for these screens
+                        enableMenu = false
                     )
                 }
             },
             floatingActionButton = {
-                // Only show floating button if authenticated and profile complete
                 if (enableDrawer && screenInfo.showFloatingButton) {
                     FloatingActionButton(
                         onClick = screenInfo.floatingButtonAction ?: {},
@@ -141,7 +132,6 @@ fun ZOZHApp() {
     }
 }
 
-// Helper function to check if profile is complete
 private fun isProfileComplete(user: UserProfile): Boolean {
     return user.weight != null && 
            user.height != null && 
@@ -173,7 +163,6 @@ fun ZOZHTopBar(
                     )
                 }
             } else if (enableMenu) {
-                // Only show menu button if enabled (authenticated)
                 IconButton(onClick = onOpenDrawer) {
                     Icon(
                         imageVector = Icons.Default.Menu,

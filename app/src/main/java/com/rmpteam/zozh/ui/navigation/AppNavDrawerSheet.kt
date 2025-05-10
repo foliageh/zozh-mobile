@@ -53,11 +53,9 @@ fun AppNavDrawerSheet(
     val coroutineScope = rememberCoroutineScope()
     var currentNavItemId by rememberSaveable { mutableIntStateOf(0) }
 
-    // Get the user repository from context
     val context = LocalContext.current
     val userRepository = context.userRepository
     
-    // Verify that user is authenticated and profile is set up
     val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
     val isAuthenticated = currentUser != null
     val isProfileComplete = isAuthenticated && 
@@ -67,12 +65,10 @@ fun AppNavDrawerSheet(
                            currentUser?.age != null && 
                            currentUser?.goal != null
 
-    // If not authenticated or profile not complete, don't show drawer content
     if (!isAuthenticated || !isProfileComplete) {
         return
     }
 
-    // Update navigation based on current destination
     val currentDestinationRoute = navController.currentBackStackEntry?.destination?.route
     LaunchedEffect(currentDestinationRoute) {
         val newIndex = navItems.indexOfFirst { 
@@ -97,7 +93,6 @@ fun AppNavDrawerSheet(
             modifier = Modifier.padding(16.dp)
         )
         
-        // Show username if available
         currentUser?.let { user ->
             Text(
                 text = "Привет, ${user.username}!",
@@ -130,15 +125,11 @@ fun AppNavDrawerSheet(
                     if (currentNavItemId != navItemInfo.id) {
                         currentNavItemId = navItemInfo.id
                         
-                        // Navigate using Screen objects
                         navController.navigate(navItemInfo.screenRoute) {
-                            // Single top prevents multiple copies of the same destination
                             launchSingleTop = true
-                            // Pop up to the first destination in the current nav graph
                             popUpTo(navController.graph.startDestinationId) {
                                 saveState = true
                             }
-                            // Avoid recreating content when reselecting the same destination
                             restoreState = true
                         }
                     }

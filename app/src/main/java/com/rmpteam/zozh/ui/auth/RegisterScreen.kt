@@ -23,7 +23,7 @@ fun RegisterScreen(
     LaunchedEffect(uiState.registrationSuccess) {
         if (uiState.registrationSuccess) {
             onRegisterSuccess()
-            viewModel.onRegistrationHandled() // Reset the event
+            viewModel.onRegistrationHandled()
         }
     }
 
@@ -44,7 +44,7 @@ fun RegisterScreen(
             value = uiState.username,
             onValueChange = { viewModel.updateUsername(it) },
             label = { Text("Логин") },
-            isError = uiState.errorMessage != null, // Show error on relevant fields
+            isError = uiState.errorMessage != null,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
@@ -79,9 +79,6 @@ fun RegisterScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }
-
-        // Success message is implicitly handled by navigation via registrationSuccess state
-        // No need for a separate successMessage Text field if navigating away.
 
         if (uiState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))

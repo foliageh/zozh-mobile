@@ -28,7 +28,6 @@ sealed class Screen {
     @Serializable
     data object Other : Screen()
     
-    // Auth and Profile screens
     @Serializable
     data object Auth : Screen()
     @Serializable
@@ -40,7 +39,6 @@ sealed class Screen {
     @Serializable
     data object Settings : Screen()
     
-    // Splash screen
     @Serializable
     data object Splash : Screen()
 
@@ -59,7 +57,6 @@ sealed class Screen {
                 title = "Другое"
             ),
             
-            // Auth and Profile screens info
             Login::class to ScreenInfo(
                 title = "Вход",
                 showAppBar = false
@@ -78,7 +75,6 @@ sealed class Screen {
                 withBackButton = true
             ),
             
-            // Splash screen has no info display
             Splash::class to ScreenInfo(
                 title = "",
                 showAppBar = false

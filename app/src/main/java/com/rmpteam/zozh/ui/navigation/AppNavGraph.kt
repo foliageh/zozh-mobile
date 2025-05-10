@@ -40,7 +40,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-// Get the user repository from the container
 val Context.userRepository: UserRepository
     get() = (applicationContext as ZOZHApplication).container.userRepository
 
@@ -50,17 +49,14 @@ fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    // Get the repository from the context
     val context = LocalContext.current
     val userRepository = context.userRepository
     
-    // Start with a splash screen while checking authentication
     NavHost(
         navController = navController,
         startDestination = Screen.Splash,
         modifier = modifier
     ) {
-        // Splash screen - checks authentication and redirects
         composable<Screen.Splash> {
             SplashScreenContent(
                 navController = navController,
@@ -68,7 +64,6 @@ fun AppNavHost(
             )
         }
         
-        // Auth Navigation
         navigation<Screen.Auth>(startDestination = Screen.Login) {
             composable<Screen.Login> {
                 LoginScreen(
@@ -103,7 +98,6 @@ fun AppNavHost(
             }
         }
         
-        // Profile Setup - mandatory before accessing the app
         composable<Screen.ProfileSetup> {
             ProfileSetupScreen(
                 onSetupComplete = {
@@ -115,7 +109,6 @@ fun AppNavHost(
             )
         }
 
-        // Nutrition Navigation
         navigation<Screen.Nutrition>(startDestination = Screen.NutritionMain) {
             composable<Screen.NutritionMain> {
                 screenInfo.floatingButtonAction = { navController.navigate(Screen.NutritionRecord()) }
@@ -127,11 +120,12 @@ fun AppNavHost(
             }
             
             composable<Screen.NutritionRecord> {
+                //val args = it.toRoute<Screen.NutritionRecord>()
+                //NutritionRecordScreen(mealId = args.mealId)
                 NutritionRecordScreen()
             }
         }
 
-        // Settings
         composable<Screen.Settings> {
             SettingsScreen(
                 onBackClick = {
@@ -156,7 +150,6 @@ fun SplashScreenContent(
     navController: NavHostController,
     userRepository: UserRepository
 ) {
-    // Show a loading indicator with logo
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -164,7 +157,6 @@ fun SplashScreenContent(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // App name as logo
             Text(
                 text = "ZOZH",
                 style = MaterialTheme.typography.headlineLarge,
@@ -174,7 +166,6 @@ fun SplashScreenContent(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // App slogan or description
             Text(
                 text = "Здоровый Образ Жизни",
                 style = MaterialTheme.typography.bodyLarge,
@@ -183,34 +174,27 @@ fun SplashScreenContent(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Loading indicator
             CircularProgressIndicator(
                 modifier = Modifier.size(48.dp)
             )
         }
     }
     
-    // Check authentication status and navigate accordingly
     LaunchedEffect(Unit) {
-        delay(1500) // Simulate loading/splash time
+        delay(1000) // Simulate loading/splash time
         val currentUser = userRepository.getCurrentUser().first()
         
         val destination = if (currentUser != null) {
-            // User is authenticated
             if (currentUser.weight != null && currentUser.height != null && 
                 currentUser.gender != null && currentUser.age != null && currentUser.goal != null) {
-                // User profile is complete, go to main screen
                 Screen.Nutrition
             } else {
-                // User needs to complete profile
                 Screen.ProfileSetup
             }
         } else {
-            // User is not authenticated, go to login
             Screen.Auth
         }
         
-        // Navigate to the appropriate destination
         navController.navigate(destination)
     }
 }
