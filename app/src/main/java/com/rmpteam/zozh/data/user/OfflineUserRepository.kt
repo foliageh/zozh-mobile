@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import java.util.UUID
+import android.util.Log
 
 class OfflineUserRepository(
     private val fakeUserProfileDatasource: FakeUserProfileDatasource,
@@ -33,14 +34,12 @@ class OfflineUserRepository(
     }
 
     override suspend fun updateUser(userProfile: UserProfile) {
-        val result = fakeUserProfileDatasource.updateUser(userProfile)
-        result.onSuccess { updatedUser ->
-            val currentUser = getCurrentUser().firstOrNull()
-            if (currentUser?.id == updatedUser.id) {
-                setCurrentUser(updatedUser)
-            }
-        }.onFailure { 
-            throw it
+        val currentUser = getCurrentUser().firstOrNull()
+        if (currentUser?.id == userProfile.id) {
+            setCurrentUser(userProfile)
+        } else {
+             //  Handle case where the update is for a user NOT currently logged in
+             Log.w("OfflineUserRepository", "updateUser called for a user ID (${userProfile.id}) that does not match the current user ID (${currentUser?.id}) in DataStore.")
         }
     }
 

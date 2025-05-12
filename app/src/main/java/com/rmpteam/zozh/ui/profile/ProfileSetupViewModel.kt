@@ -1,5 +1,6 @@
 package com.rmpteam.zozh.ui.profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rmpteam.zozh.data.user.UserRepository
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
 
 class ProfileSetupViewModel(private val userRepository: UserRepository) : ViewModel() {
 
@@ -59,12 +61,15 @@ class ProfileSetupViewModel(private val userRepository: UserRepository) : ViewMo
 
     fun saveProfile(onSuccess: () -> Unit) {
         val currentState = _uiState.value
-        val userToUpdate = currentState.currentUser ?: com.rmpteam.zozh.data.user.UserProfile(
-            id = "",
-            username = "",
-            password = ""
-        )
-
+        
+        // Ensure the user is loaded before attempting to save - Keep this initial check
+        val initialUser = currentState.currentUser
+        if (initialUser == null) {
+             _uiState.update { it.copy(errorMessage = "Ошибка: Данные пользователя еще не загружены. Попробуйте еще раз.") }
+             return // Don't proceed if user is null initially
+        }
+        
+        // Validate based on current UI input
         when (val validationResult = ValidationUtil.validateProfileData(
             weightStr = currentState.weight,
             heightStr = currentState.height,
@@ -81,24 +86,38 @@ class ProfileSetupViewModel(private val userRepository: UserRepository) : ViewMo
             }
         }
 
-        val weightFloat = currentState.weight.toFloat()
-        val heightInt = currentState.height.toInt()
-        val ageInt = currentState.age.toInt()
-
-        val updatedProfile = userToUpdate.copy(
-            weight = weightFloat,
-            height = heightInt,
-            age = ageInt,
-            gender = currentState.selectedGender,
-            goal = currentState.selectedGoal
-        )
-
         viewModelScope.launch {
+            // Re-fetch the user from the repository right before updating
+            // This ensures we have the ID consistent with the persistent source
+            val userToUpdate = userRepository.getCurrentUser().firstOrNull()
+            
+            if (userToUpdate == null) {
+                 _uiState.update { it.copy(errorMessage = "Ошибка: Не удалось получить данные пользователя для обновления.") }
+                 return@launch
+            }
+
+            val weightFloat = currentState.weight.toFloat()
+            val heightInt = currentState.height.toInt()
+            val ageInt = currentState.age.toInt()
+
+            val updatedProfile = userToUpdate.copy( // Use the freshly fetched user as the base for copy
+                weight = weightFloat,
+                height = heightInt,
+                age = ageInt,
+                gender = currentState.selectedGender,
+                goal = currentState.selectedGoal
+            )
+            
+            // <<< Logging Point 1 >>>
+            Log.d("ProfileSetupViewModel", "Attempting to update user. ID: ${updatedProfile.id}")
+
             try {
                 userRepository.updateUser(updatedProfile)
-                userRepository.setCurrentUser(updatedProfile)
+                // No need to call setCurrentUser here, updateUser in OfflineUserRepository handles it
+                // userRepository.setCurrentUser(updatedProfile) 
                 onSuccess()
             } catch (e: Exception) {
+                 Log.e("ProfileSetupViewModel", "Error updating profile: ${e.message}", e) // Log exception too
                 _uiState.update { it.copy(errorMessage = "Пожалуйста, проверьте правильность введенных данных: ${e.message}") }
             }
         }

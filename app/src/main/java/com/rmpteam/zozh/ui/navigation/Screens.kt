@@ -39,9 +39,6 @@ sealed class Screen {
     @Serializable
     data object Settings : Screen()
     
-    @Serializable
-    data object Splash : Screen()
-
     companion object {
         val screensInfo = mapOf(
             NutritionMain::class to ScreenInfo(
@@ -74,11 +71,6 @@ sealed class Screen {
                 title = "Настройки",
                 withBackButton = true
             ),
-            
-            Splash::class to ScreenInfo(
-                title = "",
-                showAppBar = false
-            )
         )
     }
 }

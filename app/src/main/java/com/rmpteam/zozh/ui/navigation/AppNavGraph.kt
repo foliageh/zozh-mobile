@@ -47,6 +47,7 @@ val Context.userRepository: UserRepository
 fun AppNavHost(
     screenInfo: ScreenInfo,
     navController: NavHostController,
+    startScreen: Screen,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -54,16 +55,9 @@ fun AppNavHost(
     
     NavHost(
         navController = navController,
-        startDestination = Screen.Splash,
+        startDestination = startScreen,
         modifier = modifier
     ) {
-        composable<Screen.Splash> {
-            SplashScreenContent(
-                navController = navController,
-                userRepository = userRepository
-            )
-        }
-        
         navigation<Screen.Auth>(startDestination = Screen.Login) {
             composable<Screen.Login> {
                 LoginScreen(
@@ -142,59 +136,5 @@ fun AppNavHost(
         composable<Screen.Other> {
             Text(text = "просто для примера")
         }
-    }
-}
-
-@Composable
-fun SplashScreenContent(
-    navController: NavHostController,
-    userRepository: UserRepository
-) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "ZOZH",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "Здоровый Образ Жизни",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.secondary
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp)
-            )
-        }
-    }
-    
-    LaunchedEffect(Unit) {
-        delay(1000) // Simulate loading/splash time
-        val currentUser = userRepository.getCurrentUser().first()
-        
-        val destination = if (currentUser != null) {
-            if (currentUser.weight != null && currentUser.height != null && 
-                currentUser.gender != null && currentUser.age != null && currentUser.goal != null) {
-                Screen.Nutrition
-            } else {
-                Screen.ProfileSetup
-            }
-        } else {
-            Screen.Auth
-        }
-        
-        navController.navigate(destination)
     }
 }

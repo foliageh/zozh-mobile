@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ZOZHApp() {
+fun ZOZHApp(startScreen: Screen) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: ""
@@ -124,9 +124,10 @@ fun ZOZHApp() {
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             AppNavHost(
+                startScreen = startScreen,
                 screenInfo = screenInfo,
                 navController = navController,
-                Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding)
             )
         }
     }
