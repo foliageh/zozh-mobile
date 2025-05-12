@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rmpteam.zozh.data.user.UserProfile
 import com.rmpteam.zozh.data.user.UserRepository
+import com.rmpteam.zozh.util.ValidationUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,14 +30,19 @@ class RegisterViewModel(private val userRepository: UserRepository) : ViewModel(
     
     fun registerUser() {
         val currentState = uiState.value
-        if (currentState.username.isBlank() || currentState.password.isBlank() || currentState.confirmPassword.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Все поля должны быть заполнены") }
-            return
-        }
 
-        if (currentState.password != currentState.confirmPassword) {
-            _uiState.update { it.copy(errorMessage = "Пароли не совпадают") }
-            return
+        when(val validationResult = ValidationUtil.validateRegistrationCredentials(
+            username = currentState.username,
+            password = currentState.password,
+            confirmPassword = currentState.confirmPassword
+        )) {
+            is ValidationUtil.ValidationResult.Error -> {
+                 _uiState.update { it.copy(errorMessage = validationResult.message) }
+                 return
+            }
+            ValidationUtil.ValidationResult.Success -> {
+                 // Proceed
+            }
         }
 
         _uiState.update { it.copy(isLoading = true) }

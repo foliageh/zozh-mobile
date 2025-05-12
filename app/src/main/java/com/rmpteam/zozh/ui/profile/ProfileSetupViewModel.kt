@@ -3,6 +3,7 @@ package com.rmpteam.zozh.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rmpteam.zozh.data.user.UserRepository
+import com.rmpteam.zozh.util.ValidationUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,14 +65,25 @@ class ProfileSetupViewModel(private val userRepository: UserRepository) : ViewMo
             password = ""
         )
 
-        val weightFloat = currentState.weight.toFloatOrNull()
-        val heightInt = currentState.height.toIntOrNull()
-        val ageInt = currentState.age.toIntOrNull()
-
-        if (weightFloat == null || heightInt == null || ageInt == null || currentState.selectedGender == null || currentState.selectedGoal == null) {
-            _uiState.update { it.copy(errorMessage = "Пожалуйста, заполните все поля") }
-            return
+        when (val validationResult = ValidationUtil.validateProfileData(
+            weightStr = currentState.weight,
+            heightStr = currentState.height,
+            ageStr = currentState.age,
+            gender = currentState.selectedGender,
+            goal = currentState.selectedGoal
+        )) {
+            is ValidationUtil.ValidationResult.Error -> {
+                _uiState.update { it.copy(errorMessage = validationResult.message) }
+                return
+            }
+            ValidationUtil.ValidationResult.Success -> {
+                // Proceed if validation is successful
+            }
         }
+
+        val weightFloat = currentState.weight.toFloat()
+        val heightInt = currentState.height.toInt()
+        val ageInt = currentState.age.toInt()
 
         val updatedProfile = userToUpdate.copy(
             weight = weightFloat,

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rmpteam.zozh.data.user.UserProfile
 import com.rmpteam.zozh.data.user.UserRepository
+import com.rmpteam.zozh.util.ValidationUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,43 +25,47 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     }
 
     fun loginUser() {
-        if (uiState.value.username.isBlank() || uiState.value.password.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Логин и пароль не могут быть пустыми") }
-            return
-        }
-
-        _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
-            val result = userRepository.login(uiState.value.username, uiState.value.password)
-            result.fold(
-                onSuccess = { userProfile ->
-                    val profileComplete = userProfile.weight != null &&
-                                          userProfile.height != null &&
-                                          userProfile.gender != null &&
-                                          userProfile.age != null &&
-                                          userProfile.goal != null
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            loginSucceeded = true,
-                            loggedInUser = userProfile,
-                            requiresProfileSetup = !profileComplete,
-                            errorMessage = null
-                        )
-                    }
-                },
-                onFailure = { exception ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = exception.message ?: "Ошибка входа",
-                            loginSucceeded = false,
-                            loggedInUser = null,
-                            requiresProfileSetup = null
-                        )
-                    }
+        val currentState = uiState.value
+        when(val validationResult = ValidationUtil.validateLoginCredentials(currentState.username, currentState.password)) {
+            is ValidationUtil.ValidationResult.Error -> {
+                _uiState.update { it.copy(errorMessage = validationResult.message) }
+                return
+            }
+            ValidationUtil.ValidationResult.Success -> {
+                _uiState.update { it.copy(isLoading = true) }
+                viewModelScope.launch {
+                    val result = userRepository.login(currentState.username, currentState.password)
+                    result.fold(
+                        onSuccess = { userProfile ->
+                            val profileComplete = userProfile.weight != null &&
+                                              userProfile.height != null &&
+                                              userProfile.gender != null &&
+                                              userProfile.age != null &&
+                                              userProfile.goal != null
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    loginSucceeded = true,
+                                    loggedInUser = userProfile,
+                                    requiresProfileSetup = !profileComplete,
+                                    errorMessage = null
+                                )
+                            }
+                        },
+                        onFailure = { exception ->
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = exception.message ?: "Ошибка входа",
+                                    loginSucceeded = false,
+                                    loggedInUser = null,
+                                    requiresProfileSetup = null
+                                )
+                            }
+                        }
+                    )
                 }
-            )
+            }
         }
     }
     
