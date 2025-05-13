@@ -46,7 +46,6 @@ sealed class Screen {
             ),
             HealthDashboard::class to ScreenInfo(
                 title = "Физическая активность",
-                showFloatingButton = true
             )
         )
     }
