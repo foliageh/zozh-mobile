@@ -2,17 +2,29 @@ package com.rmpteam.zozh.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.user.UserProfile
 import com.rmpteam.zozh.data.user.UserRepository
-import com.rmpteam.zozh.util.ValidationUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegisterViewModel(private val userRepository: UserRepository) : ViewModel() {
+data class RegisterUiState(
+    val username: String = "",
+    val password: String = "",
+    val confirmPassword: String = "",
+    val email: String = "",
+    val errorMessage: String? = null,
+    val isLoading: Boolean = false,
+    val registrationSuccess: Boolean = false
+)
 
+class RegisterViewModel(
+    private val userPreferencesRepository: UserPreferencesRepository,
+    userRepository: UserRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
@@ -48,7 +60,6 @@ class RegisterViewModel(private val userRepository: UserRepository) : ViewModel(
         _uiState.update { it.copy(isLoading = true) }
 
         val userToRegister = UserProfile(
-            id = "",
             username = currentState.username,
             password = currentState.password
         )
@@ -76,9 +87,5 @@ class RegisterViewModel(private val userRepository: UserRepository) : ViewModel(
                 }
             )
         }
-    }
-
-    fun onRegistrationHandled() {
-        _uiState.update { it.copy(registrationSuccess = false, errorMessage = null) }
     }
 } 

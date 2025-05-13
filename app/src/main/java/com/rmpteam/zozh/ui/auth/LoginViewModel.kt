@@ -1,75 +1,64 @@
 package com.rmpteam.zozh.ui.auth
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.user.UserProfile
 import com.rmpteam.zozh.data.user.UserRepository
-import com.rmpteam.zozh.util.ValidationUtil
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import com.rmpteam.zozh.util.ValidationResult
 import kotlinx.coroutines.launch
 
-class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
+data class LoginUiState(
+    val username: String = "",
+    val password: String = "",
+    val validationResult: ValidationResult = ValidationResult(false),
+    val loginSucceeded: Boolean = false,
+    val requiresProfileSetup: Boolean = false,
+    val loggedInUser: UserProfile? = null,
+    val isLoading: Boolean = false
+)
 
-    private val _uiState = MutableStateFlow(LoginUiState())
-    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+class LoginViewModel(
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
+    var uiState by mutableStateOf(LoginUiState())
+        private set
 
     fun updateUsername(username: String) {
-        _uiState.update { it.copy(username = username, errorMessage = null) }
+        val validationResult = if (username.isNotBlank()) ValidationResult(isValid = true)
+        else ValidationResult(isValid = false, errorMessage = "Логин не может быть пустым")
+        uiState = uiState.copy(validationResult = validationResult)
     }
 
     fun updatePassword(password: String) {
-        _uiState.update { it.copy(password = password, errorMessage = null) }
+        val validationResult = if (password.isNotBlank()) ValidationResult(isValid = true)
+        else ValidationResult(isValid = false, errorMessage = "Пароль не может быть пустым")
+        uiState = uiState.copy(validationResult = validationResult)
     }
 
     fun loginUser() {
-        val currentState = uiState.value
-        when(val validationResult = ValidationUtil.validateLoginCredentials(currentState.username, currentState.password)) {
-            is ValidationUtil.ValidationResult.Error -> {
-                _uiState.update { it.copy(errorMessage = validationResult.message) }
-                return
-            }
-            ValidationUtil.ValidationResult.Success -> {
-                _uiState.update { it.copy(isLoading = true) }
-                viewModelScope.launch {
-                    val result = userRepository.login(currentState.username, currentState.password)
-                    result.fold(
-                        onSuccess = { userProfile ->
-                            val profileComplete = userProfile.weight != null &&
-                                              userProfile.height != null &&
-                                              userProfile.gender != null &&
-                                              userProfile.age != null &&
-                                              userProfile.goal != null
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    loginSucceeded = true,
-                                    loggedInUser = userProfile,
-                                    requiresProfileSetup = !profileComplete,
-                                    errorMessage = null
-                                )
-                            }
-                        },
-                        onFailure = { exception ->
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = exception.message ?: "Ошибка входа",
-                                    loginSucceeded = false,
-                                    loggedInUser = null,
-                                    requiresProfileSetup = null
-                                )
-                            }
-                        }
-                    )
+        viewModelScope.launch {
+            uiState = uiState.copy(isLoading = true)
+            userRepository.findUserByUsername(uiState.username).fold(
+                onSuccess = {
+                    if (it.password == uiState.password) {
+                        userPreferencesRepository.saveUserProfile(it)
+                        uiState = uiState.copy(loginSucceeded = true, loggedInUser = it)
+                    } else {
+                        val validationResult = ValidationResult(isValid = false, errorMessage = "Неверный пароль")
+                        uiState = uiState.copy(loginSucceeded = false, validationResult = validationResult)
+                    }
+                },
+                onFailure = {
+                    val validationResult = ValidationResult(isValid = false, errorMessage = "Пользователь не найден")
+                    uiState = uiState.copy(loginSucceeded = false, validationResult = validationResult)
                 }
-            }
+            )
+            uiState = uiState.copy(isLoading = false)
         }
     }
-    
-    fun onLoginNavigationHandled() {
-        _uiState.update { it.copy(loginSucceeded = false, loggedInUser = null, requiresProfileSetup = null) }
-    }
-} 
+}

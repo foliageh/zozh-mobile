@@ -1,13 +1,21 @@
 package com.rmpteam.zozh.ui.auth
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rmpteam.zozh.di.AppViewModelProvider
 
@@ -18,14 +26,7 @@ fun LoginScreen(
     onRegisterClick: () -> Unit
 ) {
     val viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(uiState.loginSucceeded, uiState.requiresProfileSetup) {
-        if (uiState.loginSucceeded && uiState.requiresProfileSetup != null) {
-            onLoginSuccessNavigation(uiState.requiresProfileSetup!!)
-            viewModel.onLoginNavigationHandled()
-        }
-    }
+    val uiState = viewModel.uiState
     
     Column(
         modifier = modifier
@@ -44,7 +45,7 @@ fun LoginScreen(
             value = uiState.username,
             onValueChange = { viewModel.updateUsername(it) },
             label = { Text("Логин") },
-            isError = uiState.errorMessage != null,
+            isError = !uiState.validationResult.isValid,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
@@ -55,39 +56,41 @@ fun LoginScreen(
             onValueChange = { viewModel.updatePassword(it) },
             label = { Text("Пароль") },
             visualTransformation = PasswordVisualTransformation(),
-            isError = uiState.errorMessage != null,
+            isError = !uiState.validationResult.isValid,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
 
-        uiState.errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+        if (!uiState.validationResult.isValid) {
+            uiState.validationResult.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
         }
 
         if (uiState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
         } else {
             Button(
-                onClick = { viewModel.loginUser() },
-                enabled = !uiState.isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                onClick = {
+                    viewModel.loginUser()
+                    if (uiState.loginSucceeded)
+                        onLoginSuccessNavigation(uiState.requiresProfileSetup)
+                },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             ) {
                 Text("Войти")
             }
-        }
-
-        TextButton(
-            onClick = onRegisterClick,
-            enabled = !uiState.isLoading
-        ) {
-            Text("Зарегистрироваться")
+            TextButton(
+                onClick = onRegisterClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Зарегистрироваться")
+            }
         }
     }
-} 
+}

@@ -39,8 +39,8 @@ fun NutritionMainScreen(
     val viewModel = viewModel<NutritionMainViewModel>(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val userPreferencesUiState by viewModel.userPreferencesUiState.collectAsStateWithLifecycle()
-    Log.d("Calories", userPreferencesUiState.calories.toString())
+    val userPreferencesUiState by viewModel.userProfileUiState.collectAsStateWithLifecycle()
+    Log.d("Calories", userPreferencesUiState.userProfile.height.toString())
 
     NutritionMainScreenContent(
         modifier = modifier.fillMaxSize(),

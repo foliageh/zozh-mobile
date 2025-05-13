@@ -2,16 +2,32 @@ package com.rmpteam.zozh.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rmpteam.zozh.data.user.Gender
+import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.user.UserProfile
 import com.rmpteam.zozh.data.user.UserRepository
-import com.rmpteam.zozh.util.ValidationUtil
+import com.rmpteam.zozh.data.user.WeightGoal
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SettingsViewModel(private val userRepository: UserRepository) : ViewModel() {
+data class SettingsUiState(
+    val currentUser: UserProfile? = null,
+    val weight: String = "",
+    val height: String = "",
+    val age: String = "",
+    val selectedGender: Gender? = null,
+    val selectedGoal: WeightGoal? = null,
+    val errorMessage: String? = null,
+    val isLoading: Boolean = true
+)
+
+class SettingsViewModel(
+    private val userPreferencesRepository: UserPreferencesRepository,
+    userRepository: UserRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
