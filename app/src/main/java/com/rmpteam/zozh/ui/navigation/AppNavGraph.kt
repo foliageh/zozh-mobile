@@ -10,6 +10,7 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.rmpteam.zozh.ui.nutrition.NutritionMainScreen
 import com.rmpteam.zozh.ui.nutrition.NutritionRecordScreen
+import com.rmpteam.zozh.ui.physicalActivity.HealthDashboardScreen
 
 @Composable
 fun AppNavHost(
@@ -36,6 +37,10 @@ fun AppNavHost(
                 //NutritionRecordScreen(mealId = args.mealId)
                 NutritionRecordScreen()
             }
+        }
+
+        composable<Screen.HealthDashboard> {
+            HealthDashboardScreen()
         }
 
         composable<Screen.Other> {

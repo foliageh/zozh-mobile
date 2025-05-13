@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dining
+import androidx.compose.material.icons.rounded.DirectionsRun
 import androidx.compose.material.icons.rounded.Outlet
+import androidx.compose.material.icons.rounded.SportsMartialArts
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,7 +34,8 @@ data class NavItemInfo(
 )
 val navItems = mapOf(
     Screen.Nutrition to NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining),
-    Screen.Other to NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet)
+    Screen.Other to NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet),
+    Screen.HealthDashboard to NavItemInfo(id = 2, title = "Физическая активность", icon = Icons.Rounded.SportsMartialArts)
 )
 
 @Composable
