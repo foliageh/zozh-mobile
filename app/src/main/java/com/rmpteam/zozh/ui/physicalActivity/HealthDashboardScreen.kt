@@ -19,22 +19,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rmpteam.zozh.data.physicalActivity.FakeActivityRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthDashboardScreen() {
-    val steps = remember { mutableStateOf(8432) }
-    val calories = remember { mutableStateOf(420) }
-    val heartRate = remember { mutableStateOf(72) }
-    val bloodPressure = remember { mutableStateOf("120/80") }
+    val repository = remember { FakeActivityRepository() }
 
-    val workouts = remember {
-        listOf(
-            Workout("Бег", "45 мин"),
-            Workout("Йога", "30 мин"),
-            Workout("Велосипед", "60 мин")
+    val steps = remember { mutableStateOf(repository.getSteps()) }
+    val calories = remember { mutableStateOf(repository.getCalories()) }
+    val heartRate = remember { mutableStateOf(repository.getCurrentHeartRate()) }
+    val bloodPressure = remember {
+        mutableStateOf(
+            repository.getHeartPressure().let { "${it.first}/${it.second}" }
         )
     }
+
+    val workouts = remember { repository.getLastThreeActivities() }
 
     Scaffold(
         topBar = {
@@ -81,6 +82,7 @@ fun HealthDashboardScreen() {
         }
     }
 }
+
 @Composable
 fun StepsAndCaloriesCard(steps: Int, calories: Int) {
     Card(
@@ -104,6 +106,7 @@ fun StepsAndCaloriesCard(steps: Int, calories: Int) {
         }
     }
 }
+
 @Composable
 fun HealthMetric(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
