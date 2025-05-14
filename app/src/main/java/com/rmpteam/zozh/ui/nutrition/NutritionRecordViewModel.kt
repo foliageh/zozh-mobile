@@ -70,7 +70,11 @@ class NutritionRecordViewModel(
         }
     }
 
-    suspend fun deleteItem() {
-        mealRepository.deleteMeal(uiState.meal.toEntity())
+    fun deleteMeal() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!uiState.isNewMeal) {
+                mealRepository.deleteMeal(uiState.meal.toEntity())
+            }
+        }
     }
 }
