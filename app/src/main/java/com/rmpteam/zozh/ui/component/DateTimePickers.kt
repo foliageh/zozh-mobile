@@ -172,7 +172,7 @@ fun DateTimePickerFieldToModal(
 ) {
     var showDateModal by remember { mutableStateOf(false) }
     var showTimeModal by remember { mutableStateOf(false) }
-    var selectedDateTime by remember { mutableStateOf(initialDateTime) }
+    var selectedDateTime by remember(initialDateTime) { mutableStateOf(initialDateTime) }
 
     OutlinedTextField(
         value = selectedDateTime.dateTimeString(),

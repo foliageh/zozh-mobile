@@ -11,7 +11,8 @@ data class UserProfile(
     var height: Int? = null,
     var gender: Gender? = null,
     var age: Int? = null,
-    var goal: WeightGoal? = null
+    var goal: WeightGoal? = null,
+    var calories: Int? = null
 ) {
     fun isProfileComplete(): Boolean {
         val weight = weight; val height = height; val age = age
@@ -29,15 +30,15 @@ data class UserProfile(
         if (password.isBlank())
             return ValidationResult(false, "Пароль не может быть пустым")
         if (weight == null || weight <= 0)
-            return ValidationResult(false,  "Неккорректное значение веса")
+            return ValidationResult(false, "Неккорректное значение веса")
         if (height == null || height <= 0)
-            return ValidationResult(false,  "Неккорректное значение роста")
+            return ValidationResult(false, "Неккорректное значение роста")
         if (gender == null)
-            return ValidationResult(false,  "Пожалуйста, выберите пол")
+            return ValidationResult(false, "Пожалуйста, выберите пол")
         if (age == null || age <= 0)
-            return ValidationResult(false,  "Неккорректное значение возраста")
+            return ValidationResult(false, "Неккорректное значение возраста")
         if (goal == null)
-            return ValidationResult(false,  "Пожалуйста, выберите цель")
+            return ValidationResult(false, "Пожалуйста, выберите цель")
         return ValidationResult(true)
     }
 
@@ -63,4 +64,4 @@ enum class WeightGoal {
     LOSE_WEIGHT,
     GAIN_WEIGHT,
     MAINTAIN_WEIGHT
-} 
+}
