@@ -45,4 +45,5 @@ class FakeActivityRepository {
     fun getHeartPressure(): Pair<Int, Int> {
         return bloodPressures.random()
     }
+
 }
