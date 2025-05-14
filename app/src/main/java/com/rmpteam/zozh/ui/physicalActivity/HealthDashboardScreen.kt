@@ -4,10 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
@@ -16,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -131,7 +135,6 @@ fun LineChart(data: List<Int>, modifier: Modifier = Modifier) {
         val spacePerPoint = size.width / (data.size - 1)
         val heightRatio = size.height / (maxValue - minValue)
 
-        // Draw grid
         drawLine(
             color = Color.Gray.copy(alpha = 0.3f),
             start = Offset(0f, size.height),
@@ -139,7 +142,6 @@ fun LineChart(data: List<Int>, modifier: Modifier = Modifier) {
             strokeWidth = 2f
         )
 
-        // Draw line
         val points = data.mapIndexed { index, value ->
             Offset(
                 x = index * spacePerPoint,
@@ -186,25 +188,46 @@ fun HeartRateBloodPressureCard(heartRate: Int, bloodPressure: String) {
 
 @Composable
 fun WorkoutItem(workout: Workout) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { /* Обработка клика */ }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(4.5f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+
                 Text(
                     text = workout.type,
-                    style = MaterialTheme.typography.bodyLarge
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyMedium
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = workout.duration,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1.2f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FitnessCenter,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.End)
                 )
             }
         }
@@ -214,7 +237,6 @@ fun WorkoutItem(workout: Workout) {
 data class Workout(
     val type: String,
     val duration: String,
-    //val icon: Int
 )
 
 @Preview(showBackground = true)
