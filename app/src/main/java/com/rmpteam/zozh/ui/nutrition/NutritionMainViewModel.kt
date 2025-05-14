@@ -50,6 +50,7 @@ class NutritionMainViewModel(
             initialValue = NutritionMainUiState(date = _dateState.value)
         )
 
+
     val userProfileState =
         userPreferencesRepository.userProfile.map { userProfile ->
             UserProfileUiState(userProfile = userProfile ?: UserProfile())

@@ -77,4 +77,7 @@ dependencies {
     annotationProcessor(libs.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
+
+    // Splash Screen
+    implementation(libs.androidx.core.splashscreen)
 }
