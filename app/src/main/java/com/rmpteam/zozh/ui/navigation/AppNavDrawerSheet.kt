@@ -1,9 +1,11 @@
+// app/src/main/java/com/rmpteam/zozh/ui/navigation/AppNavDrawerSheet.kt
 package com.rmpteam.zozh.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dining
+import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Outlet
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
@@ -32,7 +34,8 @@ data class NavItemInfo(
 )
 val navItems = mapOf(
     Screen.Nutrition to NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining),
-    Screen.Other to NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet)
+    Screen.Sleep to NavItemInfo(id = 1, title = "Сон", icon = Icons.Rounded.NightsStay),
+    Screen.Other to NavItemInfo(id = 2, title = "Другое", icon = Icons.Rounded.Outlet)
 )
 
 @Composable

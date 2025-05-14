@@ -1,3 +1,4 @@
+// app/src/main/java/com/rmpteam/zozh/ui/navigation/AppNavGraph.kt
 package com.rmpteam.zozh.ui.navigation
 
 import androidx.compose.material3.Text
@@ -10,6 +11,7 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.rmpteam.zozh.ui.nutrition.NutritionMainScreen
 import com.rmpteam.zozh.ui.nutrition.NutritionRecordScreen
+import com.rmpteam.zozh.ui.sleep.SleepScreen
 
 @Composable
 fun AppNavHost(
@@ -32,10 +34,12 @@ fun AppNavHost(
                 )
             }
             composable<Screen.NutritionRecord> {
-                //val args = it.toRoute<Screen.NutritionRecord>()
-                //NutritionRecordScreen(mealId = args.mealId)
                 NutritionRecordScreen(onNavigateBack = { navController.navigateUp() })
             }
+        }
+
+        composable<Screen.Sleep> {
+            SleepScreen()
         }
 
         composable<Screen.Other> {
