@@ -1,4 +1,3 @@
-// app/src/main/java/com/rmpteam/zozh/di/AppContainer.kt
 package com.rmpteam.zozh.di
 
 import android.content.Context

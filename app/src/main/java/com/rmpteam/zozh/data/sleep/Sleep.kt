@@ -1,4 +1,3 @@
-// app/src/main/java/com/rmpteam/zozh/data/sleep/Sleep.kt
 package com.rmpteam.zozh.data.sleep
 
 import androidx.room.Entity

@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun NutritionRecordScreen(
     modifier: Modifier = Modifier,
-    //mealId: Int = 0,
+    
     onNavigateBack: () -> Unit
 ) {
     val viewModel = viewModel<NutritionRecordViewModel>(factory = AppViewModelProvider.Factory)

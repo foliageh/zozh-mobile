@@ -1,7 +1,7 @@
-// app/src/main/java/com/rmpteam/zozh/ui/sleep/SleepScreen.kt
 package com.rmpteam.zozh.ui.sleep
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,7 +49,8 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun SleepScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSleepItemClick: (Sleep) -> Unit = {}
 ) {
     val viewModel = viewModel<SleepViewModel>(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -57,81 +60,14 @@ fun SleepScreen(
         date = uiState.date,
         sleepList = uiState.sleepList,
         isLoading = uiState.isLoading,
+        isTrackingSleep = uiState.isTrackingSleep,
+        trackingStartTime = uiState.trackingStartTime,
         onPreviousDate = { viewModel.updateDate(uiState.date.minusDays(7)) },
-        onNextDate = { viewModel.updateDate(uiState.date.plusDays(7)) }
+        onNextDate = { viewModel.updateDate(uiState.date.plusDays(7)) },
+        onStartTracking = { viewModel.startTrackingSleep() },
+        onStopTracking = { viewModel.stopTrackingSleep() },
+        onSleepItemClick = onSleepItemClick
     )
-}
-
-@Composable
-fun SleepScreenContent(
-    modifier: Modifier = Modifier,
-    date: ZonedDateTime,
-    sleepList: List<Sleep>,
-    isLoading: Boolean,
-    onPreviousDate: () -> Unit = {},
-    onNextDate: () -> Unit = {}
-) {
-    Column(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Date selector
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onPreviousDate) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Предыдущая неделя")
-            }
-            Text(
-                text = "Данные за неделю до ${date.dateString()}",
-                style = MaterialTheme.typography.titleMedium
-            )
-            IconButton(onClick = onNextDate) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Следующая неделя")
-            }
-        }
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (sleepList.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Нет данных о сне за этот период",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        } else {
-            // Sleep Summary Card
-            SleepSummaryCard(sleepList = sleepList)
-            
-            // Sleep Quality Chart
-            SleepQualityChart(sleepList = sleepList)
-            
-            // Sleep List
-            Text(
-                text = "История сна",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(sleepList) { sleep ->
-                    SleepItem(sleep = sleep)
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -152,7 +88,7 @@ fun SleepSummaryCard(
 
     val hours = avgDuration / 60
     val minutes = avgDuration % 60
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -174,11 +110,11 @@ fun SleepSummaryCard(
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             val qualityCount = remember(sleepList) {
                 sleepList.groupingBy { it.quality }.eachCount()
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -215,9 +151,9 @@ fun SleepQualityChart(
     val qualityCount = remember(sleepList) {
         sleepList.groupingBy { it.quality }.eachCount()
     }
-    
-    val total = sleepList.size.toFloat()
-    
+
+    val total = sleepList.size.toFloat().coerceAtLeast(1f)
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -232,7 +168,7 @@ fun SleepQualityChart(
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Box(
                 modifier = Modifier
                     .size(200.dp)
@@ -243,18 +179,18 @@ fun SleepQualityChart(
                     val strokeWidth = 30f
                     val radius = (size.minDimension - strokeWidth) / 2
                     var startAngle = -90f
-                    
+
                     SleepQuality.values().forEachIndexed { index, quality ->
                         val count = qualityCount[quality] ?: 0
                         if (count > 0) {
                             val sweepAngle = 360f * (count / total)
                             val color = when(quality) {
                                 SleepQuality.POOR -> Color.Red
-                                SleepQuality.FAIR -> Color.Yellow
+                                SleepQuality.FAIR -> Color(0xFFFFA000) 
                                 SleepQuality.GOOD -> Color.Green
                                 SleepQuality.EXCELLENT -> Color.Blue
                             }
-                            
+
                             drawArc(
                                 color = color,
                                 startAngle = startAngle,
@@ -266,7 +202,7 @@ fun SleepQualityChart(
                         }
                     }
                 }
-                
+
                 if (sleepList.isNotEmpty()) {
                     val mostCommonQuality = qualityCount.maxByOrNull { it.value }?.key ?: SleepQuality.GOOD
                     Text(
@@ -281,10 +217,9 @@ fun SleepQualityChart(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Legend
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -297,23 +232,15 @@ fun SleepQualityChart(
                                 .padding(end = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .align(Alignment.Center)
-                                    .padding(2.dp)
-                            ) {
-                                val color = when(quality) {
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = when(quality) {
                                     SleepQuality.POOR -> Color.Red
-                                    SleepQuality.FAIR -> Color.Yellow
+                                    SleepQuality.FAIR -> Color(0xFFFFA000) 
                                     SleepQuality.GOOD -> Color.Green
                                     SleepQuality.EXCELLENT -> Color.Blue
                                 }
-                                Surface(
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = color
-                                ) {}
-                            }
+                            ) {}
                         }
                         Text(
                             text = when(quality) {
@@ -332,9 +259,103 @@ fun SleepQualityChart(
 }
 
 @Composable
+fun SleepScreenContent(
+    modifier: Modifier = Modifier,
+    date: ZonedDateTime,
+    sleepList: List<Sleep>,
+    isLoading: Boolean,
+    isTrackingSleep: Boolean,
+    trackingStartTime: ZonedDateTime?,
+    onPreviousDate: () -> Unit = {},
+    onNextDate: () -> Unit = {},
+    onStartTracking: () -> Unit = {},
+    onStopTracking: () -> Unit = {},
+    onSleepItemClick: (Sleep) -> Unit = {}
+) {
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onPreviousDate) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Предыдущая неделя")
+            }
+            Text(
+                text = "Данные за неделю до ${date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconButton(onClick = onNextDate) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Следующая неделя")
+            }
+        }
+
+        Button(
+            onClick = if (isTrackingSleep) onStopTracking else onStartTracking,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isTrackingSleep) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            )
+        ) {
+            val buttonText = if (isTrackingSleep) {
+                "Остановить сон"
+            } else {
+                "Начать сон"
+            }
+            Text(buttonText)
+        }
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (sleepList.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Нет данных о сне за этот период",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        } else {
+            
+            SleepSummaryCard(sleepList = sleepList)
+
+            SleepQualityChart(sleepList = sleepList)
+
+            Text(
+                text = "История сна",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(sleepList) { sleep ->
+                    SleepItem(
+                        sleep = sleep,
+                        onClick = { onSleepItemClick(sleep) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun SleepItem(
     sleep: Sleep,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy") }
@@ -346,12 +367,14 @@ fun SleepItem(
 
     val hours = durationMinutes / 60
     val minutes = durationMinutes % 60
-    
+
     Surface(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
         Row(
             modifier = Modifier
@@ -371,7 +394,7 @@ fun SleepItem(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            
+
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.End
@@ -391,7 +414,7 @@ fun SleepItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = when(sleep.quality) {
                         SleepQuality.POOR -> Color.Red
-                        SleepQuality.FAIR -> Color.Yellow
+                        SleepQuality.FAIR -> Color(0xFFFFA000) 
                         SleepQuality.GOOD -> Color.Green
                         SleepQuality.EXCELLENT -> Color.Blue
                     }

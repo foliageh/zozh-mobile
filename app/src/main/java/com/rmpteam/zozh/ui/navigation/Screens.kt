@@ -1,4 +1,3 @@
-// app/src/main/java/com/rmpteam/zozh/ui/navigation/Screens.kt
 package com.rmpteam.zozh.ui.navigation
 
 import androidx.compose.material.icons.Icons
@@ -29,6 +28,9 @@ sealed class Screen {
     data object Sleep : Screen()
 
     @Serializable
+    data class SleepDetail(val sleepId: Long) : Screen()
+
+    @Serializable
     data object Other : Screen()
 
     companion object {
@@ -43,6 +45,10 @@ sealed class Screen {
             ),
             Sleep::class to ScreenInfo(
                 title = "Статистика сна"
+            ),
+            SleepDetail::class to ScreenInfo(
+                title = "Детали сна",
+                withBackButton = true
             ),
             Other::class to ScreenInfo(
                 title = "Другое"

@@ -63,7 +63,7 @@ fun ZOZHApp() {
         }
     ) {
         Scaffold(
-            //modifier = Modifier.nestedScroll(TopAppBarDefaults.enterAlwaysScrollBehavior().nestedScrollConnection),
+            
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 ZOZHTopBar(
@@ -111,7 +111,7 @@ fun ZOZHTopBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        //scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(),
+        
         navigationIcon = {
             if (screenInfo.withBackButton) {
                 IconButton(onClick = onNavigateBack) {

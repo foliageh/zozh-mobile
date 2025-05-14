@@ -1,4 +1,3 @@
-// app/src/main/java/com/rmpteam/zozh/di/AppViewModelProvider.kt
 package com.rmpteam.zozh.di
 
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -9,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.rmpteam.zozh.ZOZHApplication
 import com.rmpteam.zozh.ui.nutrition.NutritionMainViewModel
 import com.rmpteam.zozh.ui.nutrition.NutritionRecordViewModel
+import com.rmpteam.zozh.ui.sleep.SleepDetailViewModel
 import com.rmpteam.zozh.ui.sleep.SleepViewModel
 
 object AppViewModelProvider {
@@ -24,6 +24,10 @@ object AppViewModelProvider {
         ) }
 
         initializer { SleepViewModel(
+            sleepRepository = appContainer().sleepRepository
+        ) }
+
+        initializer { SleepDetailViewModel(
             sleepRepository = appContainer().sleepRepository
         ) }
     }

@@ -75,7 +75,7 @@ fun NutritionMainScreenContent(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Date selector
+        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -90,7 +90,6 @@ fun NutritionMainScreenContent(
             }
         }
 
-        // Summary of macros
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -132,7 +131,6 @@ fun NutritionMainScreenContent(
             }
         }
 
-        // Meal list
         LazyColumn(
             modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)

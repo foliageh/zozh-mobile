@@ -1,4 +1,3 @@
-// app/src/main/java/com/rmpteam/zozh/data/db/CommonDatabase.kt
 package com.rmpteam.zozh.data.db
 
 import android.content.Context
