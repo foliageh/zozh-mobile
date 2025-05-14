@@ -26,6 +26,9 @@ class FakeActivityRepository {
     fun getLastThreeActivities(): List<Workout> {
         return workouts.shuffled().take(3)
     }
+    fun getLastZeroActivities(): List<Workout> {
+        return workouts.shuffled().take(0)
+    }
 
     fun getCurrentHeartRate(): Int {
         return heartRates.random()

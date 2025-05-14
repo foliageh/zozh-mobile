@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,33 +21,180 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rmpteam.zozh.data.physicalActivity.FakeActivityRepository
 
+data class WorkoutRecord(
+    val id: Int = 0,
+    val type: String = "",
+    val duration: String = ""
+)
+data class WorkoutUiState(
+    val workout: WorkoutRecord = WorkoutRecord(),
+    val isWorkoutValid: Boolean = false,
+    val isNewWorkout: Boolean = true
+)
+
+@Composable
+fun WorkoutInputForm(workout: WorkoutRecord, onValueChange: (WorkoutRecord) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        OutlinedTextField(
+            value = workout.type,
+            onValueChange = { onValueChange(workout.copy(type = it)) },
+            label = { Text("Тип тренировки") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text, // Разрешаем текст
+                imeAction = ImeAction.Done
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = workout.duration,
+            onValueChange = { onValueChange(workout.copy(duration = it)) },
+            label = { Text("Продолжительность (мин)") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number // Только цифры
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+
+@Composable
+fun WorkoutRecordScreenContent(
+    modifier: Modifier = Modifier,
+    workoutUiState: WorkoutUiState,
+    onValueChange: (WorkoutRecord) -> Unit = {},
+    onSaveClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
+) {
+    Column(modifier = modifier.padding(16.dp)) {
+        WorkoutInputForm(
+            workout = workoutUiState.workout,
+            onValueChange = onValueChange
+        )
+        Spacer(Modifier.height(16.dp))
+        Button(
+            onClick = onSaveClick,
+            enabled = workoutUiState.isWorkoutValid,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = if (workoutUiState.isNewWorkout) "Добавить" else "Сохранить")
+        }
+        if (!workoutUiState.isNewWorkout) {
+            Spacer(Modifier.height(4.dp))
+            OutlinedButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Удалить")
+            }
+        }
+    }
+}
+
+@Composable
+fun WorkoutItem(workout: Workout) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { /* Обработка клика */ }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = workout.type,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "${workout.duration} минут",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.FitnessCenter,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthDashboardScreen() {
     val repository = remember { FakeActivityRepository() }
+    var showAddDialog by remember { mutableStateOf(false) }
+    val workoutState = remember { mutableStateOf(WorkoutUiState()) }
 
+    // Восстановленные показатели
     val steps = remember { mutableStateOf(repository.getSteps()) }
     val calories = remember { mutableStateOf(repository.getCalories()) }
     val heartRate = remember { mutableStateOf(repository.getCurrentHeartRate()) }
     val bloodPressure = remember {
-        mutableStateOf(
-            repository.getHeartPressure().let { "${it.first}/${it.second}" }
-        )
+        mutableStateOf(repository.getHeartPressure().let { "${it.first}/${it.second}" })
     }
 
-    val workouts = remember { repository.getLastThreeActivities() }
+    val workouts = remember { repository.getLastZeroActivities().toMutableStateList() }
 
     Scaffold(
-        topBar = {
+        bottomBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Мои показатели") }
+                title = { Text("") },
+                actions = {
+                    IconButton(onClick = { showAddDialog = true }) {
+                        Icon(Icons.Default.Add, "Добавить тренировку")
+                    }
+                }
             )
+        },
+
+        floatingActionButton = {
+            if (showAddDialog) {
+                AlertDialog(
+                    onDismissRequest = { showAddDialog = false },
+                    title = { Text("Новая тренировка") },
+                    text = {
+                        WorkoutRecordScreenContent(
+                            workoutUiState = workoutState.value,
+                            onValueChange = { newRecord ->
+                                workoutState.value = workoutState.value.copy(
+                                    workout = newRecord,
+                                    isWorkoutValid = newRecord.type.isNotBlank() &&
+                                            newRecord.duration.isNotBlank()
+                                )
+                            },
+                            onSaveClick = {
+                                workouts.add(0, workoutState.value.workout.toWorkout())
+                                showAddDialog = false
+                                workoutState.value = WorkoutUiState()
+                            }
+                        )
+                    },
+                    confirmButton = {},
+                    dismissButton = {}
+                )
+            }
         }
     ) { padding ->
         LazyColumn(
@@ -55,10 +204,7 @@ fun HealthDashboardScreen() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                StepsAndCaloriesCard(steps.value, calories.value)
-            }
-
+            item { StepsAndCaloriesCard(steps.value, calories.value) }
             item {
                 LineChart(
                     data = listOf(70, 75, 80, 72, 68, 65, 70),
@@ -67,18 +213,16 @@ fun HealthDashboardScreen() {
                         .height(200.dp)
                 )
             }
-
-            item {
-                HeartRateBloodPressureCard(heartRate.value, bloodPressure.value)
-            }
+            item { HeartRateBloodPressureCard(heartRate.value, bloodPressure.value) }
 
             item {
                 Text(
-                    text = "Последние тренировки",
+                    "Последние тренировки",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
+
 
             items(workouts) { workout ->
                 WorkoutItem(workout = workout)
@@ -186,54 +330,10 @@ fun HeartRateBloodPressureCard(heartRate: Int, bloodPressure: String) {
     }
 }
 
-@Composable
-fun WorkoutItem(workout: Workout) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { /* Обработка клика */ }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier.weight(4.5f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-
-                Text(
-                    text = workout.type,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = workout.duration,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1.2f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FitnessCenter,
-                    contentDescription = null,
-                    modifier = Modifier.align(Alignment.End)
-                )
-            }
-        }
-    }
-}
-
+private fun WorkoutRecord.toWorkout() = Workout(
+    type = this.type,
+    duration = this.duration
+)
 data class Workout(
     val type: String,
     val duration: String,
