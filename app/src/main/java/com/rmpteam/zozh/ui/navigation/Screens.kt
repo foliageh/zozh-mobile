@@ -11,7 +11,8 @@ data class ScreenInfo(
     val showFloatingButton: Boolean = false,
     var floatingButtonAction: (() -> Unit)? = null,
     val floatingButtonIcon: ImageVector? = Icons.Filled.Add,
-    val floatingButtonDescription: String? = "Добавить"
+    val floatingButtonDescription: String? = "Добавить",
+    val showAppBar: Boolean = true
 )
 
 sealed class Screen {
@@ -26,7 +27,18 @@ sealed class Screen {
 
     @Serializable
     data object Other : Screen()
-
+    
+    @Serializable
+    data object Auth : Screen()
+    @Serializable
+    data object Login : Screen()
+    @Serializable
+    data object Register : Screen()
+    @Serializable
+    data object ProfileSetup : Screen()
+    @Serializable
+    data object Settings : Screen()
+    
     companion object {
         val screensInfo = mapOf(
             NutritionMain::class to ScreenInfo(
@@ -40,7 +52,25 @@ sealed class Screen {
 
             Other::class to ScreenInfo(
                 title = "Другое"
-            )
+            ),
+            
+            Login::class to ScreenInfo(
+                title = "Вход",
+                showAppBar = false
+            ),
+            Register::class to ScreenInfo(
+                title = "Регистрация",
+                withBackButton = true,
+                showAppBar = false
+            ),
+            ProfileSetup::class to ScreenInfo(
+                title = "Настройка профиля",
+                showAppBar = false
+            ),
+            Settings::class to ScreenInfo(
+                title = "Настройки",
+                withBackButton = true
+            ),
         )
     }
 }

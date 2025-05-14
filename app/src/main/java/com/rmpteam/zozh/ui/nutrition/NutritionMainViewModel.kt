@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.time.ZonedDateTime
 
@@ -50,16 +51,16 @@ class NutritionMainViewModel(
             initialValue = NutritionMainUiState(date = _dateState.value)
         )
 
-    val userProfileState =
-        userPreferencesRepository.userProfile.map { userProfile ->
-            UserProfileUiState(userProfile = userProfile ?: UserProfile())
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(FLOW_TIMEOUT_MS),
-            initialValue = runBlocking {
-                UserProfileUiState(userProfile = userPreferencesRepository.userProfile.first() ?: UserProfile())
-            }
-        )
+//    val userProfileState =
+//        userPreferencesRepository.userProfile.map { userProfile ->
+//            UserProfileUiState(userProfile = userProfile ?: UserProfile())
+//        }.stateIn(
+//            scope = viewModelScope,
+//            started = SharingStarted.WhileSubscribed(FLOW_TIMEOUT_MS),
+//            initialValue = runBlocking {
+//                UserProfileUiState(userProfile = userPreferencesRepository.userProfile.first() ?: UserProfile())
+//            }
+//        )
 
     fun updateDate(date: ZonedDateTime) {
         _dateState.value = date

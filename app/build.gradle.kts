@@ -77,4 +77,9 @@ dependencies {
     annotationProcessor(libs.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
+
+    // Splash Screen
+    // implementation(libs.androidx.core.splashscreen) // Assuming libs alias exists or add manually
+    // If libs.androidx.core.splashscreen doesn't resolve, replace with:
+    implementation("androidx.core:core-splashscreen:1.0.1") // Check for the latest version
 }
