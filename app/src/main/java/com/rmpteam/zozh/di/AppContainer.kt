@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import com.rmpteam.zozh.data.UserPreferencesRepository
+import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.db.CommonDatabase
 import com.rmpteam.zozh.data.nutrition.MealRepository
 import com.rmpteam.zozh.data.nutrition.OfflineMealRepository

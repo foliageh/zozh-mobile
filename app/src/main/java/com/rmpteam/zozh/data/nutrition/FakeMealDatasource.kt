@@ -12,13 +12,13 @@ object FakeMealDatasource {
         ),
         Meal(
             2,
-            "Поздний ужин",
+            "Поздний ужин мм как вкусно ням-ням-ням",
             DateTimeUtil.now().minusHours(3),
             20, 19, 44
         ),
         Meal(
             2,
-            "Завтрак",
+            "Завтрак большой",
             DateTimeUtil.now().minusDays(2),
             25, 40, 30
         ),

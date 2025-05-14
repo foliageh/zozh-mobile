@@ -34,7 +34,7 @@ fun AppNavHost(
             composable<Screen.NutritionRecord> {
                 //val args = it.toRoute<Screen.NutritionRecord>()
                 //NutritionRecordScreen(mealId = args.mealId)
-                NutritionRecordScreen()
+                NutritionRecordScreen(onNavigateBack = { navController.navigateUp() })
             }
         }
 
