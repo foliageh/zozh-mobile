@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 
 class SettingsViewModel(private val userRepository: UserRepository) : ViewModel() {
 
@@ -64,19 +67,28 @@ class SettingsViewModel(private val userRepository: UserRepository) : ViewModel(
     }
 
     fun saveProfile(onSuccess: () -> Unit) {
-        val currentState = _uiState.value
-        val user = currentState.currentUser ?: return
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-        when (val validationResult = ValidationUtil.validateProfileData(
+        val currentState = _uiState.value
+        val user = currentState.currentUser
+
+        if (user == null) {
+            _uiState.update { it.copy(isLoading = false, errorMessage = "Cannot save: User data not loaded.") }
+            return
+        }
+
+        val validationResult = ValidationUtil.validateProfileData(
             weightStr = currentState.weight,
             heightStr = currentState.height,
             ageStr = currentState.age,
             gender = currentState.selectedGender,
             goal = currentState.selectedGoal
-        )) {
+        )
+
+        when (validationResult) {
             is ValidationUtil.ValidationResult.Error -> {
-                Log.e("a", validationResult.message)
-                _uiState.update { it.copy(errorMessage = validationResult.message) }
+                Log.e("SettingsViewModel", "Validation Error: ${validationResult.message}")
+                _uiState.update { it.copy(errorMessage = validationResult.message, isLoading = false) }
                 return
             }
             ValidationUtil.ValidationResult.Success -> {
@@ -84,24 +96,60 @@ class SettingsViewModel(private val userRepository: UserRepository) : ViewModel(
             }
         }
 
-        val weightFloat = currentState.weight.toFloat()
-        val heightInt = currentState.height.toInt()
-        val ageInt = currentState.age.toInt()
+        val weightFloat = currentState.weight.toFloatOrNull()
+        val heightInt = currentState.height.toIntOrNull()
+        val ageInt = currentState.age.toIntOrNull()
+        val gender = currentState.selectedGender
+        val goal = currentState.selectedGoal
 
+        if (weightFloat == null || heightInt == null || ageInt == null || gender == null || goal == null) {
+            Log.e("SettingsViewModel", "Post-validation parsing/nullability check failed. Weight: ${currentState.weight}, Height: ${currentState.height}, Age: ${currentState.age}, Gender: $gender, Goal: $goal")
+            _uiState.update { it.copy(errorMessage = "Invalid data format. Please check all fields.", isLoading = false) }
+            return
+        }
+        
         val updatedProfile = user.copy(
             weight = weightFloat,
             height = heightInt,
             age = ageInt,
-            gender = currentState.selectedGender,
-            goal = currentState.selectedGoal
+            gender = gender, 
+            goal = goal
         )
 
+        Log.d("SettingsViewModel", "saveProfile: Starting coroutine to update user.")
         viewModelScope.launch {
+            var operationSuccessful = false
+            Log.d("SettingsViewModel", "saveProfile coroutine: Entered try block.")
             try {
+                Log.d("SettingsViewModel", "saveProfile coroutine: Calling userRepository.updateUser...")
                 userRepository.updateUser(updatedProfile)
-                onSuccess()
+                Log.d("SettingsViewModel", "saveProfile coroutine: userRepository.updateUser completed.")
+                operationSuccessful = true
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = "Пожалуйста, проверьте правильность введенных данных") }
+                Log.e("SettingsViewModel", "saveProfile coroutine: Entered catch block.", e)
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    Log.e("SettingsViewModel", "Error updating user profile", e)
+                    _uiState.update { it.copy(errorMessage = "Ошибка сохранения: ${e.localizedMessage ?: "Неизвестная ошибка"}") }
+                }
+            } finally {
+                Log.d("SettingsViewModel", "saveProfile coroutine: Entered finally block. Coroutine active: ${currentCoroutineContext().isActive}")
+                if (currentCoroutineContext().isActive) { 
+                    if (operationSuccessful) {
+                        Log.d("SettingsViewModel", "saveProfile coroutine (finally): Operation successful. Setting isLoading=false and preparing to call onSuccess.")
+                        _uiState.update { it.copy(isLoading = false) }
+                        // Give the UI a moment to process the isLoading=false update before navigating
+                        delay(50) // 50ms delay, can be adjusted
+                        Log.d("SettingsViewModel", "saveProfile coroutine (finally): Calling onSuccess after delay.")
+                        onSuccess()
+                    } else {
+                        Log.d("SettingsViewModel", "saveProfile coroutine (finally): Operation NOT successful. Setting isLoading=false.")
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
+                } else {
+                    Log.d("SettingsViewModel", "saveProfile coroutine (finally): Coroutine was cancelled. Setting isLoading=false.")
+                    _uiState.update { it.copy(isLoading = false) }
+                }
+                Log.d("SettingsViewModel", "saveProfile coroutine (finally): Exiting finally block. isLoading should be false.")
             }
         }
     }

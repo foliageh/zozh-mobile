@@ -48,7 +48,7 @@ val navItems = listOf(
 fun AppNavDrawerSheet(
     modifier: Modifier = Modifier,
     navController: NavController,
-    drawerState: DrawerState
+    drawerState: DrawerState,
 ) {
     val coroutineScope = rememberCoroutineScope()
     var currentNavItemId by rememberSaveable { mutableIntStateOf(0) }
@@ -57,17 +57,6 @@ fun AppNavDrawerSheet(
     val userRepository = context.userRepository
     
     val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
-    val isAuthenticated = currentUser != null
-    val isProfileComplete = isAuthenticated && 
-                           currentUser?.weight != null && 
-                           currentUser?.height != null &&
-                           currentUser?.gender != null && 
-                           currentUser?.age != null && 
-                           currentUser?.goal != null
-
-    if (!isAuthenticated || !isProfileComplete) {
-        return
-    }
 
     val currentDestinationRoute = navController.currentBackStackEntry?.destination?.route
     LaunchedEffect(currentDestinationRoute) {

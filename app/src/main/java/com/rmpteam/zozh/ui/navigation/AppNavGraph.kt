@@ -39,6 +39,7 @@ import com.rmpteam.zozh.ui.settings.SettingsScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import android.util.Log
 
 val Context.userRepository: UserRepository
     get() = (applicationContext as ZOZHApplication).container.userRepository
@@ -123,7 +124,7 @@ fun AppNavHost(
         composable<Screen.Settings> {
             SettingsScreen(
                 onBackClick = {
-                    navController.popBackStack()
+                    navController.navigate(Screen.Nutrition)
                 },
                 onLogout = {
                     navController.navigate(Screen.Auth) {

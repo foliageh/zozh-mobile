@@ -61,7 +61,7 @@ fun ZOZHApp(startScreen: Screen) {
                        currentRoute == "register" || 
                        currentRoute == "profileSetup"
     
-    val enableDrawer = isAuthenticated && isProfileComplete && !isAuthScreen
+    val enableDrawer = isAuthenticated && !isAuthScreen
     
     val screenInfo = remember(navBackStackEntry) {
         Screen.screensInfo.entries.firstOrNull {
@@ -75,12 +75,10 @@ fun ZOZHApp(startScreen: Screen) {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            if (enableDrawer) {
                 AppNavDrawerSheet(
                     navController = navController,
                     drawerState = drawerState
                 )
-            }
         },
         gesturesEnabled = enableDrawer
     ) {
