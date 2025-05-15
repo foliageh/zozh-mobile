@@ -6,21 +6,16 @@ import com.rmpteam.zozh.data.sleep.Sleep
 import com.rmpteam.zozh.data.sleep.SleepQuality
 import com.rmpteam.zozh.data.sleep.SleepRepository
 import com.rmpteam.zozh.util.DateTimeUtil
-import com.rmpteam.zozh.util.FLOW_TIMEOUT_MS
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 data class SleepUiState(
-    val date: ZonedDateTime,
+    val date: ZonedDateTime = DateTimeUtil.now(),
     val isLoading: Boolean = true,
     val sleepList: List<Sleep> = emptyList(),
     val isTrackingSleep: Boolean = false,
@@ -30,7 +25,12 @@ data class SleepUiState(
 class SleepViewModel(
     private val sleepRepository: SleepRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SleepUiState(date = DateTimeUtil.now()))
+    
+    private val currentDate = DateTimeUtil.now()
+
+    private var currentSleepList = listOf<Sleep>()
+
+    private val _uiState = MutableStateFlow(SleepUiState(date = currentDate))
     val uiState: StateFlow<SleepUiState> = _uiState.asStateFlow()
 
     init {
@@ -40,13 +40,18 @@ class SleepViewModel(
     private fun loadSleepData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+
             sleepRepository.getSleepByDate(_uiState.value.date).collect { sleepList ->
-                _uiState.update {
-                    it.copy(
+                currentSleepList = sleepList
+
+                _uiState.update { currentState ->
+                    currentState.copy(
                         isLoading = false,
                         sleepList = sleepList
                     )
                 }
+
+                println("Загружено записей о сне: ${sleepList.size}")
             }
         }
     }
@@ -66,27 +71,46 @@ class SleepViewModel(
     }
 
     fun stopTrackingSleep() {
-        val startTime = _uiState.value.trackingStartTime ?: return
+        
+        val startTime = DateTimeUtil.now().minusHours(6)
+        val endTime = DateTimeUtil.now()
 
-        val endTime = startTime.plusHours(6)
+        val newSleep = Sleep(
+            id = (currentSleepList.maxOfOrNull { it.id } ?: 0) + 1,
+            startTime = startTime,
+            endTime = endTime,
+            quality = SleepQuality.GOOD,
+            notes = "Автоматически созданная запись (демо)"
+        )
 
         viewModelScope.launch {
-            sleepRepository.insertSleep(
-                Sleep(
-                    startTime = startTime,
-                    endTime = endTime,
-                    quality = SleepQuality.GOOD
-                )
-            )
+            try {
+                sleepRepository.insertSleep(newSleep)
+                println("Добавлена запись о сне (через репозиторий)")
+            } catch (e: Exception) {
+                println("Ошибка при добавлении записи: ${e.message}")
+            }
+
+            val updatedList = currentSleepList.toMutableList()
+            updatedList.add(newSleep)
+            currentSleepList = updatedList
 
             _uiState.update {
                 it.copy(
                     isTrackingSleep = false,
-                    trackingStartTime = null
+                    trackingStartTime = null,
+                    sleepList = updatedList
                 )
             }
 
-            loadSleepData()
+            println("Локальное состояние обновлено, записей: ${updatedList.size}")
         }
+    }
+
+    fun isCurrentWeek(date: ZonedDateTime): Boolean {
+        
+        val daysDifference = ChronoUnit.DAYS.between(date, currentDate)
+
+        return daysDifference in 0..6
     }
 }

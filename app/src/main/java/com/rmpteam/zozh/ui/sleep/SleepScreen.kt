@@ -24,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,10 +43,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rmpteam.zozh.data.sleep.Sleep
 import com.rmpteam.zozh.data.sleep.SleepQuality
 import com.rmpteam.zozh.di.AppViewModelProvider
+import com.rmpteam.zozh.util.DateTimeUtil
 import com.rmpteam.zozh.util.DateTimeUtil.dateString
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.absoluteValue
 
 @Composable
 fun SleepScreen(
@@ -55,13 +58,17 @@ fun SleepScreen(
     val viewModel = viewModel<SleepViewModel>(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val isCurrentWeek = remember(uiState.date) {
+        viewModel.isCurrentWeek(uiState.date)
+    }
+
     SleepScreenContent(
         modifier = modifier.fillMaxSize(),
         date = uiState.date,
         sleepList = uiState.sleepList,
         isLoading = uiState.isLoading,
         isTrackingSleep = uiState.isTrackingSleep,
-        trackingStartTime = uiState.trackingStartTime,
+        isCurrentWeek = isCurrentWeek, 
         onPreviousDate = { viewModel.updateDate(uiState.date.minusDays(7)) },
         onNextDate = { viewModel.updateDate(uiState.date.plusDays(7)) },
         onStartTracking = { viewModel.startTrackingSleep() },
@@ -186,7 +193,7 @@ fun SleepQualityChart(
                             val sweepAngle = 360f * (count / total)
                             val color = when(quality) {
                                 SleepQuality.POOR -> Color.Red
-                                SleepQuality.FAIR -> Color(0xFFFFA000) 
+                                SleepQuality.FAIR -> Color(0xFFFFA000)
                                 SleepQuality.GOOD -> Color.Green
                                 SleepQuality.EXCELLENT -> Color.Blue
                             }
@@ -236,7 +243,7 @@ fun SleepQualityChart(
                                 modifier = Modifier.fillMaxSize(),
                                 color = when(quality) {
                                     SleepQuality.POOR -> Color.Red
-                                    SleepQuality.FAIR -> Color(0xFFFFA000) 
+                                    SleepQuality.FAIR -> Color(0xFFFFA000)
                                     SleepQuality.GOOD -> Color.Green
                                     SleepQuality.EXCELLENT -> Color.Blue
                                 }
@@ -265,7 +272,7 @@ fun SleepScreenContent(
     sleepList: List<Sleep>,
     isLoading: Boolean,
     isTrackingSleep: Boolean,
-    trackingStartTime: ZonedDateTime?,
+    isCurrentWeek: Boolean, 
     onPreviousDate: () -> Unit = {},
     onNextDate: () -> Unit = {},
     onStartTracking: () -> Unit = {},
@@ -282,31 +289,47 @@ fun SleepScreenContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            
             IconButton(onClick = onPreviousDate) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Предыдущая неделя")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Предыдущая неделя"
+                )
             }
+
             Text(
                 text = "Данные за неделю до ${date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
                 style = MaterialTheme.typography.titleMedium
             )
-            IconButton(onClick = onNextDate) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Следующая неделя")
+
+            if (!isCurrentWeek) {
+                IconButton(onClick = onNextDate) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Следующая неделя"
+                    )
+                }
+            } else {
+                
+                Spacer(modifier = Modifier.size(48.dp))
             }
         }
 
-        Button(
-            onClick = if (isTrackingSleep) onStopTracking else onStartTracking,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isTrackingSleep) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-            )
-        ) {
-            val buttonText = if (isTrackingSleep) {
-                "Остановить сон"
-            } else {
-                "Начать сон"
+        if (isCurrentWeek) {
+            Button(
+                onClick = if (isTrackingSleep) onStopTracking else onStartTracking,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isTrackingSleep) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
+            ) {
+                val buttonText = if (isTrackingSleep) {
+                    "Остановить сон"
+                } else {
+                    "Начать сон"
+                }
+                Text(buttonText)
             }
-            Text(buttonText)
         }
 
         if (isLoading) {
@@ -327,7 +350,7 @@ fun SleepScreenContent(
                 )
             }
         } else {
-            
+
             SleepSummaryCard(sleepList = sleepList)
 
             SleepQualityChart(sleepList = sleepList)
@@ -414,7 +437,7 @@ fun SleepItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = when(sleep.quality) {
                         SleepQuality.POOR -> Color.Red
-                        SleepQuality.FAIR -> Color(0xFFFFA000) 
+                        SleepQuality.FAIR -> Color(0xFFFFA000)
                         SleepQuality.GOOD -> Color.Green
                         SleepQuality.EXCELLENT -> Color.Blue
                     }
