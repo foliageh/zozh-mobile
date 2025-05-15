@@ -40,6 +40,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.navigation.toRoute
 import com.rmpteam.zozh.ui.sleep.SleepDetailScreen
 import com.rmpteam.zozh.ui.sleep.SleepScreen
 
