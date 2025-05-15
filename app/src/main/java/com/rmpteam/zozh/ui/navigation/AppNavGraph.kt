@@ -40,9 +40,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.util.Log
+import com.rmpteam.zozh.ui.sleep.SleepDetailScreen
+import com.rmpteam.zozh.ui.sleep.SleepScreen
 
 val Context.userRepository: UserRepository
     get() = (applicationContext as ZOZHApplication).container.userRepository
+
 
 @Composable
 fun AppNavHost(
@@ -115,8 +118,6 @@ fun AppNavHost(
             }
             
             composable<Screen.NutritionRecord> {
-                //val args = it.toRoute<Screen.NutritionRecord>()
-                //NutritionRecordScreen(mealId = args.mealId)
                 NutritionRecordScreen(onNavigateBack = { navController.navigateUp() })
             }
         }
@@ -131,6 +132,22 @@ fun AppNavHost(
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+        
+        composable<Screen.Sleep> {
+            SleepScreen(
+                onSleepItemClick = { sleep ->
+                    navController.navigate(Screen.SleepDetail(sleepId = sleep.id))
+                }
+            )
+        }
+
+        composable<Screen.SleepDetail> { backStackEntry ->
+            val args = backStackEntry.toRoute<Screen.SleepDetail>()
+            SleepDetailScreen(
+                sleepId = args.sleepId,
+                onNavigateBack = { navController.navigateUp() }
             )
         }
 

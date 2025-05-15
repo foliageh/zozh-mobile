@@ -26,6 +26,12 @@ sealed class Screen {
     ) : Screen()
 
     @Serializable
+    data object Sleep : Screen()
+
+    @Serializable
+    data class SleepDetail(val sleepId: Long) : Screen()
+
+    @Serializable
     data object Other : Screen()
     
     @Serializable
@@ -49,7 +55,13 @@ sealed class Screen {
                 title = "Приём пищи",
                 withBackButton = true
             ),
-
+            Sleep::class to ScreenInfo(
+                title = "Статистика сна"
+            ),
+            SleepDetail::class to ScreenInfo(
+                title = "Детали сна",
+                withBackButton = true
+            ),
             Other::class to ScreenInfo(
                 title = "Другое"
             ),
@@ -74,6 +86,3 @@ sealed class Screen {
         )
     }
 }
-
-
-

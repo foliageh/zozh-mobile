@@ -12,6 +12,8 @@ import com.rmpteam.zozh.ui.settings.SettingsViewModel
 import com.rmpteam.zozh.ui.profile.ProfileSetupViewModel
 import com.rmpteam.zozh.ui.auth.LoginViewModel
 import com.rmpteam.zozh.ui.auth.RegisterViewModel
+import com.rmpteam.zozh.ui.sleep.SleepDetailViewModel
+import com.rmpteam.zozh.ui.sleep.SleepViewModel
 
 object AppViewModelProvider {
     val Factory = viewModelFactory {
@@ -36,6 +38,13 @@ object AppViewModelProvider {
         initializer { LoginViewModel(userRepository = appContainer().userRepository) }
 
         initializer { RegisterViewModel(userRepository = appContainer().userRepository) }
+        initializer { SleepViewModel(
+            sleepRepository = appContainer().sleepRepository
+        ) }
+
+        initializer { SleepDetailViewModel(
+            sleepRepository = appContainer().sleepRepository
+        ) }
     }
 }
 

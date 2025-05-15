@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dining
+import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Outlet
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.DrawerState
@@ -40,8 +41,9 @@ data class NavItemInfo(
 
 val navItems = listOf(
     NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining, screenRoute = Screen.Nutrition),
-    NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet, screenRoute = Screen.Other),
-    NavItemInfo(id = 2, title = "Настройки", icon = Icons.Rounded.Settings, screenRoute = Screen.Settings)
+    NavItemInfo(id = 1, title = "Сон", icon = Icons.Rounded.NightsStay, screenRoute = Screen.Sleep),
+    NavItemInfo(id = 2, title = "Другое", icon = Icons.Rounded.Outlet, screenRoute = Screen.Other),
+    NavItemInfo(id = 3, title = "Настройки", icon = Icons.Rounded.Settings, screenRoute = Screen.Settings)
 )
 
 @Composable
