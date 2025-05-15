@@ -43,6 +43,7 @@ import android.util.Log
 import androidx.navigation.toRoute
 import com.rmpteam.zozh.ui.sleep.SleepDetailScreen
 import com.rmpteam.zozh.ui.sleep.SleepScreen
+import com.rmpteam.zozh.ui.physicalActivity.HealthDashboardScreen
 
 val Context.userRepository: UserRepository
     get() = (applicationContext as ZOZHApplication).container.userRepository
@@ -150,6 +151,10 @@ fun AppNavHost(
                 sleepId = args.sleepId,
                 onNavigateBack = { navController.navigateUp() }
             )
+        }
+        
+        composable<Screen.HealthDashboard> {
+            HealthDashboardScreen()
         }
 
         composable<Screen.Other> {

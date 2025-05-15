@@ -45,6 +45,9 @@ sealed class Screen {
     @Serializable
     data object Settings : Screen()
     
+    @Serializable
+    data object HealthDashboard : Screen()
+
     companion object {
         val screensInfo = mapOf(
             NutritionMain::class to ScreenInfo(
@@ -83,6 +86,9 @@ sealed class Screen {
                 title = "Настройки",
                 withBackButton = true
             ),
+            HealthDashboard::class to ScreenInfo(
+                title = "Физическая активность",
+            )
         )
     }
 }
