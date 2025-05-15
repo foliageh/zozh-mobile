@@ -1,10 +1,16 @@
 package com.rmpteam.zozh.ui.navigation
 
+import android.content.Context
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dining
+import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Outlet
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.DirectionsRun
+import androidx.compose.material.icons.rounded.Outlet
+import androidx.compose.material.icons.rounded.SportsMartialArts
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -14,13 +20,17 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
@@ -28,21 +38,47 @@ import kotlinx.coroutines.launch
 data class NavItemInfo(
     val id: Int,
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val screenRoute: Screen
 )
-val navItems = mapOf(
-    Screen.Nutrition to NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining),
-    Screen.Other to NavItemInfo(id = 1, title = "Другое", icon = Icons.Rounded.Outlet)
+
+val navItems = listOf(
+    NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining, screenRoute = Screen.Nutrition),
+    NavItemInfo(id = 1, title = "Сон", icon = Icons.Rounded.NightsStay, screenRoute = Screen.Sleep),
+    NavItemInfo(id = 2, title = "Физическая активность", icon = Icons.Rounded.SportsMartialArts, screenRoute = Screen.HealthDashboard),
+    NavItemInfo(id = 3, title = "Настройки", icon = Icons.Rounded.Settings, screenRoute = Screen.Settings)
 )
 
 @Composable
 fun AppNavDrawerSheet(
     modifier: Modifier = Modifier,
     navController: NavController,
-    drawerState: DrawerState
+    drawerState: DrawerState,
 ) {
     val coroutineScope = rememberCoroutineScope()
     var currentNavItemId by rememberSaveable { mutableIntStateOf(0) }
+
+    val context = LocalContext.current
+    val userRepository = context.userRepository
+    
+    val currentUser by userRepository.getCurrentUser().collectAsState(initial = null)
+
+    val currentDestinationRoute = navController.currentBackStackEntry?.destination?.route
+    LaunchedEffect(currentDestinationRoute) {
+        val newIndex = navItems.indexOfFirst { 
+            when (it.screenRoute) {
+                is Screen.Nutrition -> currentDestinationRoute == "Nutrition" || 
+                                      currentDestinationRoute?.startsWith("NutritionMain") == true ||
+                                      currentDestinationRoute?.startsWith("NutritionRecord") == true
+                is Screen.Other -> currentDestinationRoute == "Other"
+                is Screen.Settings -> currentDestinationRoute == "Settings"
+                else -> false
+            }
+        }
+        if (newIndex >= 0) {
+            currentNavItemId = newIndex
+        }
+    }
 
     ModalDrawerSheet {
         Text(
@@ -50,8 +86,18 @@ fun AppNavDrawerSheet(
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(16.dp)
         )
+        
+        currentUser?.let { user ->
+            Text(
+                text = "Привет, ${user.username}!",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
+        
         HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
-        navItems.forEach { (screen, navItemInfo) ->
+        
+        navItems.forEach { navItemInfo ->
             NavigationDrawerItem(
                 icon = {
                     Icon(
@@ -69,9 +115,17 @@ fun AppNavDrawerSheet(
                 selected = currentNavItemId == navItemInfo.id,
                 onClick = {
                     coroutineScope.launch { drawerState.close() }
+                    
                     if (currentNavItemId != navItemInfo.id) {
                         currentNavItemId = navItemInfo.id
-                        navController.navigate(screen)
+                        
+                        navController.navigate(navItemInfo.screenRoute) {
+                            launchSingleTop = true
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            restoreState = true
+                        }
                     }
                 },
                 modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)

@@ -48,13 +48,15 @@ fun NutritionMainScreen(
     val viewModel = viewModel<NutritionMainViewModel>(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val userPreferencesUiState by viewModel.userProfileState.collectAsStateWithLifecycle()
+//    val userPreferencesUiState by viewModel.userProfileState.collectAsStateWithLifecycle()
 
     NutritionMainScreenContent(
         modifier = modifier.fillMaxSize(),
         date = uiState.date,
         mealList = uiState.mealList,
-        goalCalories = userPreferencesUiState.userProfile.calories ?: 2100,
+        goalCalories =
+//            userPreferencesUiState.userProfile.calories ?:
+            2100,
         onNutritionRecordClick = onNavigateToNutritionRecord,
         onPreviousDate = { viewModel.updateDate(uiState.date.minusDays(1)) },
         onNextDate = { viewModel.updateDate(uiState.date.plusDays(1)) }
@@ -75,7 +77,7 @@ fun NutritionMainScreenContent(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Date selector
+        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -90,7 +92,6 @@ fun NutritionMainScreenContent(
             }
         }
 
-        // Summary of macros
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -132,7 +133,6 @@ fun NutritionMainScreenContent(
             }
         }
 
-        // Meal list
         LazyColumn(
             modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)

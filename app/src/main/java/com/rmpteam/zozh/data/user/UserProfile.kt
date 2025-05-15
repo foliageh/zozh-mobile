@@ -5,8 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserProfile(
-    var username: String = "",
-    var password: String = "",
+    val id: String,
+    var username: String,
+    var password: String, // Consider if password should be stored/transmitted like this long-term
     var weight: Float? = null,
     var height: Int? = null,
     var gender: Gender? = null,

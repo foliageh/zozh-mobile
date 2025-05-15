@@ -8,6 +8,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.rmpteam.zozh.ZOZHApplication
 import com.rmpteam.zozh.ui.nutrition.NutritionMainViewModel
 import com.rmpteam.zozh.ui.nutrition.NutritionRecordViewModel
+import com.rmpteam.zozh.ui.settings.SettingsViewModel
+import com.rmpteam.zozh.ui.profile.ProfileSetupViewModel
+import com.rmpteam.zozh.ui.auth.LoginViewModel
+import com.rmpteam.zozh.ui.auth.RegisterViewModel
+import com.rmpteam.zozh.ui.sleep.SleepDetailViewModel
+import com.rmpteam.zozh.ui.sleep.SleepViewModel
 
 object AppViewModelProvider {
     val Factory = viewModelFactory {
@@ -19,6 +25,25 @@ object AppViewModelProvider {
         initializer { NutritionRecordViewModel(
             this.createSavedStateHandle(),
             mealRepository = appContainer().mealRepository
+        ) }
+
+        initializer { SettingsViewModel(
+            userRepository = appContainer().userRepository
+        ) }
+
+        initializer { ProfileSetupViewModel(
+            userRepository = appContainer().userRepository
+        ) }
+
+        initializer { LoginViewModel(userRepository = appContainer().userRepository) }
+
+        initializer { RegisterViewModel(userRepository = appContainer().userRepository) }
+        initializer { SleepViewModel(
+            sleepRepository = appContainer().sleepRepository
+        ) }
+
+        initializer { SleepDetailViewModel(
+            sleepRepository = appContainer().sleepRepository
         ) }
     }
 }
