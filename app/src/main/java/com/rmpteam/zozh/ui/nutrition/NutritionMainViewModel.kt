@@ -23,7 +23,7 @@ import java.time.ZonedDateTime
 data class NutritionMainUiState(
     val date: ZonedDateTime,
     val isLoading: Boolean = true,
-    val mealList: List<MealRecord> = emptyList(),
+    val mealList: List<MealDetail> = emptyList(),
 )
 
 data class UserProfileUiState(
@@ -40,7 +40,7 @@ class NutritionMainViewModel(
     val uiState: StateFlow<NutritionMainUiState> = _dateState
         .flatMapLatest { date ->
             mealRepository.getMealsByDate(date)
-                .map { it.map { meal -> meal.toMealRecord() } }
+                .map { it.map { meal -> meal.toMealDetail() } }
                 .map { NutritionMainUiState(date = date, isLoading = false, mealList = it) }
                 .onStart { emit(NutritionMainUiState(date = date, isLoading = true)) }
         }

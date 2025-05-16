@@ -36,12 +36,12 @@ import com.rmpteam.zozh.ui.theme.ZOZHTheme
 import kotlinx.coroutines.launch
 
 @Composable
-fun NutritionRecordScreen(
+fun MealDetailScreen(
     modifier: Modifier = Modifier,
     //mealId: Int = 0,
     onNavigateBack: () -> Unit
 ) {
-    val viewModel = viewModel<NutritionRecordViewModel>(factory = AppViewModelProvider.Factory)
+    val viewModel = viewModel<MealDetailViewModel>(factory = AppViewModelProvider.Factory)
     val uiState = viewModel.uiState
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -51,8 +51,8 @@ fun NutritionRecordScreen(
     if (!uiState.isMealFound) {
         Text(text = "Запись не найдена", modifier = modifier.padding(16.dp))
     } else {
-        NutritionRecordScreenContent(
-            modifier = modifier.verticalScroll(rememberScrollState()),
+        MealDetailScreenContent(
+            modifier = modifier,
             mealUiState = uiState,
             onValueChange = viewModel::updateUiState,
             onSaveClick = {
@@ -74,15 +74,17 @@ fun NutritionRecordScreen(
 }
 
 @Composable
-fun NutritionRecordScreenContent(
+fun MealDetailScreenContent(
     modifier: Modifier = Modifier,
     mealUiState: MealUiState,
-    onValueChange: (MealRecord) -> Unit = {},
+    onValueChange: (MealDetail) -> Unit = {},
     onSaveClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {}
 ) {
     Column(
-        modifier = modifier.padding(16.dp)
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
     ) {
         MealInputForm(
             meal = mealUiState.meal,
@@ -111,15 +113,14 @@ fun NutritionRecordScreenContent(
                 Text(text = "Удалить")
             }
         }
-
     }
 }
 
 @Composable
 fun MealInputForm(
     modifier: Modifier = Modifier,
-    meal: MealRecord,
-    onValueChange: (MealRecord) -> Unit = {},
+    meal: MealDetail,
+    onValueChange: (MealDetail) -> Unit = {},
     enabled: Boolean = true
 ) {
     Column(
@@ -176,7 +177,7 @@ fun MealInputForm(
         }
         OutlinedTextField(
             value = ""+meal.calories,
-            onValueChange = {  },
+            onValueChange = { },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             label = { Text(text = "Калории") },
             modifier = Modifier.fillMaxWidth(),
@@ -189,13 +190,13 @@ fun MealInputForm(
 
 @Preview(showBackground = true)
 @Composable
-fun NutritionRecordScreenPreview() {
+fun MealDetailScreenPreview() {
     ZOZHTheme {
-        NutritionRecordScreenContent(
+        MealDetailScreenContent(
             modifier = Modifier.fillMaxSize(),
             mealUiState = MealUiState(
                 isNewMeal = false,
-                meal = FakeMealDatasource.mealList[0].toMealRecord(),
+                meal = FakeMealDatasource.mealList[0].toMealDetail(),
                 isMealValid = true,
                 isMealFound = true
             )

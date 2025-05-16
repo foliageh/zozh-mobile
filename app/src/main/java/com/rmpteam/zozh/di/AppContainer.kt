@@ -8,19 +8,26 @@ import com.rmpteam.zozh.data.user.UserPreferencesRepository
 import com.rmpteam.zozh.data.db.CommonDatabase
 import com.rmpteam.zozh.data.nutrition.MealRepository
 import com.rmpteam.zozh.data.nutrition.OfflineMealRepository
+import com.rmpteam.zozh.data.sleep.FakeSleepRepository
+import com.rmpteam.zozh.data.sleep.SleepRepository
 
 interface AppContainer {
     val userPreferencesRepository: UserPreferencesRepository
     val mealRepository: MealRepository
+    val sleepRepository: SleepRepository
 }
 
 class OfflineAppContainer(private val context: Context) : AppContainer {
+    override val userPreferencesRepository: UserPreferencesRepository by lazy {
+        UserPreferencesRepository(context.dataStore)
+    }
+
     override val mealRepository: MealRepository by lazy {
         OfflineMealRepository(CommonDatabase.getDatabase(context).mealDao())
     }
 
-    override val userPreferencesRepository: UserPreferencesRepository by lazy {
-        UserPreferencesRepository(context.dataStore)
+    override val sleepRepository: SleepRepository by lazy {
+        FakeSleepRepository()
     }
 }
 

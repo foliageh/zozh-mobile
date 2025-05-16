@@ -43,7 +43,7 @@ import java.time.ZonedDateTime
 @Composable
 fun NutritionMainScreen(
     modifier: Modifier = Modifier,
-    onNavigateToNutritionRecord: (mealId: Long) -> Unit
+    onNavigateToMealDetail: (mealId: Long) -> Unit
 ) {
     val viewModel = viewModel<NutritionMainViewModel>(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -51,11 +51,10 @@ fun NutritionMainScreen(
     val userPreferencesUiState by viewModel.userProfileState.collectAsStateWithLifecycle()
 
     NutritionMainScreenContent(
-        modifier = modifier.fillMaxSize(),
         date = uiState.date,
         mealList = uiState.mealList,
         goalCalories = userPreferencesUiState.userProfile.calories ?: 2100,
-        onNutritionRecordClick = onNavigateToNutritionRecord,
+        onMealDetailClick = onNavigateToMealDetail,
         onPreviousDate = { viewModel.updateDate(uiState.date.minusDays(1)) },
         onNextDate = { viewModel.updateDate(uiState.date.plusDays(1)) }
     )
@@ -65,14 +64,16 @@ fun NutritionMainScreen(
 fun NutritionMainScreenContent(
     modifier: Modifier = Modifier,
     date: ZonedDateTime,
-    mealList: List<MealRecord>,
+    mealList: List<MealDetail>,
     goalCalories: Int?,
-    onNutritionRecordClick: (mealId: Long) -> Unit,
+    onMealDetailClick: (mealId: Long) -> Unit,
     onPreviousDate: () -> Unit = {},
     onNextDate: () -> Unit = {}
 ) {
     Column(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         // Date selector
@@ -141,7 +142,7 @@ fun NutritionMainScreenContent(
                 MealItem(
                     meal = meal,
                     goalCalories = goalCalories,
-                    onClick = { onNutritionRecordClick(meal.id) }
+                    onClick = { onMealDetailClick(meal.id) }
                 )
             }
         }
@@ -150,7 +151,8 @@ fun NutritionMainScreenContent(
 
 @Composable
 fun MealItem(
-    meal: MealRecord,
+    modifier: Modifier = Modifier,
+    meal: MealDetail,
     goalCalories: Int?,
     onClick: () -> Unit
 ) {
@@ -158,7 +160,7 @@ fun MealItem(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
@@ -234,11 +236,11 @@ fun NutritionMainScreenPreview() {
         NutritionMainScreenContent(
             modifier = Modifier.fillMaxSize(),
             date = DateTimeUtil.now().startOfDay(),
-            mealList = FakeMealDatasource.mealList.map { it.toMealRecord() },
+            mealList = FakeMealDatasource.mealList.map { it.toMealDetail() },
             goalCalories = 2500,
-            onNutritionRecordClick = {  },
-            onPreviousDate = {  },
-            onNextDate = {  }
+            onMealDetailClick = { },
+            onPreviousDate = { },
+            onNextDate = { }
         )
     }
 }

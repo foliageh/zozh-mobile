@@ -7,13 +7,16 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.rmpteam.zozh.data.nutrition.Meal
 import com.rmpteam.zozh.data.nutrition.MealDao
+import com.rmpteam.zozh.data.sleep.Sleep
+import com.rmpteam.zozh.data.sleep.SleepDao
 import kotlinx.coroutines.Dispatchers
 
-@Database(entities = [Meal::class], version = 1, exportSchema = false)
+@Database(entities = [Meal::class, Sleep::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class CommonDatabase : RoomDatabase() {
 
     abstract fun mealDao(): MealDao
+    abstract fun sleepDao(): SleepDao
 
     companion object {
         @Volatile

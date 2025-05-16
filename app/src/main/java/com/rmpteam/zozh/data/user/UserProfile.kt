@@ -1,18 +1,16 @@
 package com.rmpteam.zozh.data.user
 
 import com.rmpteam.zozh.util.ValidationResult
-import kotlinx.serialization.Serializable
 
-@Serializable
 data class UserProfile(
-    var username: String = "",
-    var password: String = "",
-    var weight: Float? = null,
-    var height: Int? = null,
-    var gender: Gender? = null,
-    var age: Int? = null,
-    var goal: WeightGoal? = null,
-    var calories: Int? = null
+    val username: String = "",
+    val password: String = "",
+    val weight: Float? = null,
+    val height: Int? = null,
+    val gender: Gender? = null,
+    val age: Int? = null,
+    val goal: WeightGoal? = null,
+    val calories: Int? = null
 ) {
     fun isProfileComplete(): Boolean {
         val weight = weight; val height = height; val age = age
@@ -54,12 +52,10 @@ data class UserProfile(
     }
 }
 
-@Serializable
 enum class Gender {
     MALE, FEMALE
 }
 
-@Serializable
 enum class WeightGoal {
     LOSE_WEIGHT,
     GAIN_WEIGHT,
