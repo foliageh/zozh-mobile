@@ -1,22 +1,21 @@
 package com.rmpteam.zozh.data.sleep
 
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.time.ZonedDateTime
 
-class OfflineSleepRepository : SleepRepository {
-
+class FakeSleepRepository : SleepRepository {
     override fun getSleepByDate(dateTime: ZonedDateTime): Flow<List<Sleep>> {
-        
         val startDay = dateTime.minusDays(30)
 
         val filteredList = FakeSleepDatasource.sleepList.filter {
-            (it.startTime.isAfter(startDay) || it.startTime.isEqual(startDay)) &&
-                    (!it.startTime.isAfter(dateTime))
+            (it.startTime.isAfter(startDay) || it.startTime.isEqual(startDay))
+                    && !it.startTime.isAfter(dateTime)
         }
 
-        println("Получено записей о сне: ${filteredList.size} (период $startDay - $dateTime)")
-        println("Общее количество записей: ${FakeSleepDatasource.sleepList.size}")
+        Log.d("SLEEP", "getSleepByDate: Получено записей о сне: ${filteredList.size} (период $startDay - $dateTime)")
+        Log.d("SLEEP", "getSleepByDate: Общее количество записей: ${FakeSleepDatasource.sleepList.size}")
 
         return flowOf(filteredList)
     }
@@ -26,9 +25,8 @@ class OfflineSleepRepository : SleepRepository {
     }
 
     override suspend fun insertSleep(sleep: Sleep): Long {
-        val id = FakeSleepDatasource.addSleep(sleep)
-        println("Добавлена запись через репозиторий, ID: $id")
-        return id
+        val newId = FakeSleepDatasource.sleepList.maxOfOrNull { it.id }?.plus(1) ?: 1
+        return FakeSleepDatasource.addSleep(sleep.copy(id = newId))
     }
 
     override suspend fun deleteSleep(sleep: Sleep) {

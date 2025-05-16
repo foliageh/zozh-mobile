@@ -26,17 +26,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.rmpteam.zozh.data.sleep.Sleep
 import com.rmpteam.zozh.data.sleep.SleepPhaseType
 import com.rmpteam.zozh.data.sleep.SleepQuality
 import com.rmpteam.zozh.data.sleep.SleepWithPhases
 import com.rmpteam.zozh.di.AppViewModelProvider
+import com.rmpteam.zozh.util.DateTimeUtil.dateString
+import com.rmpteam.zozh.util.DateTimeUtil.timeString
 import java.time.Duration
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun SleepDetailScreen(
@@ -96,11 +95,8 @@ fun SleepDetailContent(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-                        val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
                         Text(
-                            text = "Сон ${sleep.startTime.format(dateFormatter)}",
+                            text = "Сон ${sleep.startTime.dateString()}",
                             style = MaterialTheme.typography.titleLarge
                         )
 
@@ -109,7 +105,7 @@ fun SleepDetailContent(
                                 text = "Начало: ",
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(text = "${sleep.startTime.format(timeFormatter)}")
+                            Text(text = sleep.startTime.timeString())
                         }
 
                         Row {
@@ -117,7 +113,7 @@ fun SleepDetailContent(
                                 text = "Окончание: ",
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(text = "${sleep.endTime.format(timeFormatter)}")
+                            Text(text = sleep.endTime.timeString())
                         }
 
                         val duration = Duration.between(sleep.startTime, sleep.endTime)
@@ -291,7 +287,7 @@ fun SleepDetailContent(
                                 recommendations.add("Качество сна недостаточно высокое. Попробуйте улучшить условия для сна: проветривайте комнату, уменьшите освещение и шум.")
                             }
 
-                            if (sleep.startTime.hour >= 0 && sleep.startTime.hour < 6) {
+                            if (sleep.startTime.hour in 0..5) {
                                 recommendations.add("Вы ложитесь спать слишком поздно. Попробуйте лечь раньше для более здорового режима сна.")
                             }
 

@@ -16,22 +16,18 @@ data class ScreenInfo(
 
 sealed class Screen {
     @Serializable
-    data object Nutrition : Screen()
+    data object NutritionSection : Screen()
     @Serializable
     data object NutritionMain : Screen()
     @Serializable
-    data class NutritionRecord(
-        val mealId: Long = 0,
-    ) : Screen()
+    data class MealDetail(val mealId: Long = 0) : Screen()
 
     @Serializable
-    data object Sleep : Screen()
-
+    data object SleepSection : Screen()
+    @Serializable
+    data object SleepMain : Screen()
     @Serializable
     data class SleepDetail(val sleepId: Long) : Screen()
-
-    @Serializable
-    data object Other : Screen()
 
     companion object {
         val screensInfo = mapOf(
@@ -39,19 +35,17 @@ sealed class Screen {
                 title = "Дневник питания",
                 showFloatingButton = true
             ),
-            NutritionRecord::class to ScreenInfo(
+            MealDetail::class to ScreenInfo(
                 title = "Приём пищи",
                 withBackButton = true
             ),
-            Sleep::class to ScreenInfo(
+
+            SleepMain::class to ScreenInfo(
                 title = "Статистика сна"
             ),
             SleepDetail::class to ScreenInfo(
                 title = "Детали сна",
                 withBackButton = true
-            ),
-            Other::class to ScreenInfo(
-                title = "Другое"
             )
         )
     }

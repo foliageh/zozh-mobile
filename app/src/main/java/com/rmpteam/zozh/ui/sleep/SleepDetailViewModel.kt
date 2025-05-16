@@ -12,7 +12,6 @@ import com.rmpteam.zozh.data.sleep.SleepRepository
 import com.rmpteam.zozh.data.sleep.SleepWithPhases
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.Duration
 
 data class SleepDetailUiState(
     val sleepWithPhases: SleepWithPhases? = null,
@@ -28,9 +27,7 @@ class SleepDetailViewModel(
     fun loadSleepDetails(sleepId: Long) {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true)
-
             val sleep = sleepRepository.getSleepById(sleepId).first()
-
             if (sleep != null) {
                 val sleepWithPhases = addMockSleepPhases(sleep)
                 uiState = uiState.copy(sleepWithPhases = sleepWithPhases, isLoading = false)
@@ -41,16 +38,12 @@ class SleepDetailViewModel(
     }
 
     private fun addMockSleepPhases(sleep: Sleep): SleepWithPhases {
-        
         val phases = mutableListOf<SleepPhase>()
-
         var currentTime = sleep.startTime
 
         while (currentTime.isBefore(sleep.endTime)) {
-            
             val lightEnd = currentTime.plusMinutes(45)
             if (lightEnd.isAfter(sleep.endTime)) break
-
             phases.add(
                 SleepPhase(
                     startTime = currentTime,

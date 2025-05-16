@@ -3,7 +3,6 @@ package com.rmpteam.zozh.data.sleep
 import com.rmpteam.zozh.util.DateTimeUtil
 
 object FakeSleepDatasource {
-    
     private val currentDate = DateTimeUtil.now()
 
     val sleepList = mutableListOf(
@@ -62,7 +61,6 @@ object FakeSleepDatasource {
         val newId = (sleepList.maxOfOrNull { it.id } ?: 0) + 1
         val newSleep = sleep.copy(id = newId)
         sleepList.add(newSleep)
-        println("Добавлена запись о сне с ID $newId: ${newSleep.startTime} - ${newSleep.endTime}")
         return newId
     }
 }

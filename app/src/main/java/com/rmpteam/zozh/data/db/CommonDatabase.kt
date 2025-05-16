@@ -25,6 +25,7 @@ abstract class CommonDatabase : RoomDatabase() {
         fun getDatabase(context: Context): CommonDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, CommonDatabase::class.java, "common_database")
+                    //.createFromAsset("database/app.db")
                     .setQueryCoroutineContext(Dispatchers.IO)
                     .fallbackToDestructiveMigration(true)
                     .build()

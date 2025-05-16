@@ -76,5 +76,9 @@ dependencies {
     ksp(libs.room.compiler)
     annotationProcessor(libs.room.compiler)
 
+    // Preferences DataStore
     implementation(libs.androidx.datastore.preferences)
+
+    // Rebugger
+    // implementation("io.github.theapache64:rebugger:1.0.0-rc03")
 }

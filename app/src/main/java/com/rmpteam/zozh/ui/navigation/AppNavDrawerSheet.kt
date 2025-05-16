@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Dining
 import androidx.compose.material.icons.rounded.NightsStay
-import androidx.compose.material.icons.rounded.Outlet
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,9 +31,8 @@ data class NavItemInfo(
     val icon: ImageVector
 )
 val navItems = mapOf(
-    Screen.Nutrition to NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining),
-    Screen.Sleep to NavItemInfo(id = 1, title = "Сон", icon = Icons.Rounded.NightsStay),
-    Screen.Other to NavItemInfo(id = 2, title = "Другое", icon = Icons.Rounded.Outlet)
+    Screen.NutritionSection to NavItemInfo(id = 0, title = "Питание", icon = Icons.Rounded.Dining),
+    Screen.SleepSection to NavItemInfo(id = 1, title = "Сон", icon = Icons.Rounded.NightsStay),
 )
 
 @Composable

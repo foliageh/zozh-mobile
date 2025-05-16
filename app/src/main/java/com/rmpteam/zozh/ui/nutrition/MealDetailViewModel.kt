@@ -17,16 +17,16 @@ import kotlinx.coroutines.launch
 
 data class MealUiState(
     val isNewMeal: Boolean = true,
-    val meal: MealRecord = MealRecord(),
+    val meal: MealDetail = MealDetail(),
     val isMealValid: Boolean = false,
     val isMealFound: Boolean = true
 )
 
-class NutritionRecordViewModel(
+class MealDetailViewModel(
     savedStateHandle: SavedStateHandle,
     private val mealRepository: MealRepository
 ) : ViewModel() {
-    private val viewModelArgs = savedStateHandle.toRoute<Screen.NutritionRecord>()
+    private val viewModelArgs = savedStateHandle.toRoute<Screen.MealDetail>()
     private val mealId = viewModelArgs.mealId
 
     var uiState by mutableStateOf(MealUiState())
@@ -36,18 +36,18 @@ class NutritionRecordViewModel(
         if (mealId > 0) {
             viewModelScope.launch {
                 val meal = mealRepository.getMealById(mealId)
-                    .filterNotNull().mapNotNull { it.toMealRecord() }.firstOrNull()
+                    .filterNotNull().mapNotNull { it.toMealDetail() }.firstOrNull()
                 uiState = if (meal == null) uiState.copy(isMealFound = false)
                 else uiState.copy(isNewMeal = false, meal = meal, isMealValid = validateMeal(meal))
             }
         }
     }
 
-    fun updateUiState(meal: MealRecord) {
+    fun updateUiState(meal: MealDetail) {
         uiState = uiState.copy(meal = meal, isMealValid = validateMeal(meal))
     }
 
-    private fun validateMeal(meal: MealRecord = uiState.meal): Boolean {
+    private fun validateMeal(meal: MealDetail = uiState.meal): Boolean {
         return with(meal) {
             name.isNotBlank() && carbs >= 0 && protein >= 0 && fat >= 0
         }

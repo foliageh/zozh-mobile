@@ -24,7 +24,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,31 +42,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rmpteam.zozh.data.sleep.Sleep
 import com.rmpteam.zozh.data.sleep.SleepQuality
 import com.rmpteam.zozh.di.AppViewModelProvider
-import com.rmpteam.zozh.util.DateTimeUtil
 import com.rmpteam.zozh.util.DateTimeUtil.dateString
+import com.rmpteam.zozh.util.DateTimeUtil.timeString
 import java.time.Duration
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import kotlin.math.absoluteValue
 
 @Composable
-fun SleepScreen(
+fun SleepMainScreen(
     modifier: Modifier = Modifier,
     onSleepItemClick: (Sleep) -> Unit = {}
 ) {
-    val viewModel = viewModel<SleepViewModel>(factory = AppViewModelProvider.Factory)
+    val viewModel = viewModel<SleepMainViewModel>(factory = AppViewModelProvider.Factory)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val isCurrentWeek = remember(uiState.date) {
-        viewModel.isCurrentWeek(uiState.date)
-    }
+    val isCurrentWeek = remember(uiState.date) { viewModel.isCurrentWeek(uiState.date) }
 
     SleepScreenContent(
         modifier = modifier.fillMaxSize(),
-        date = uiState.date,
-        sleepList = uiState.sleepList,
-        isLoading = uiState.isLoading,
-        isTrackingSleep = uiState.isTrackingSleep,
+        uiState = uiState,
         isCurrentWeek = isCurrentWeek, 
         onPreviousDate = { viewModel.updateDate(uiState.date.minusDays(7)) },
         onNextDate = { viewModel.updateDate(uiState.date.plusDays(7)) },
@@ -93,8 +84,9 @@ fun SleepSummaryCard(
         }
     }
 
-    val hours = avgDuration / 60
-    val minutes = avgDuration % 60
+    val qualityCount = remember(sleepList) {
+        sleepList.groupingBy { it.quality }.eachCount()
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -112,21 +104,17 @@ fun SleepSummaryCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "$hours ч $minutes мин",
+                text = "${avgDuration / 60} ч ${avgDuration % 60} мин",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            val qualityCount = remember(sleepList) {
-                sleepList.groupingBy { it.quality }.eachCount()
-            }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                SleepQuality.values().forEach { quality ->
+                SleepQuality.entries.forEach { quality ->
                     val count = qualityCount[quality] ?: 0
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -159,7 +147,9 @@ fun SleepQualityChart(
         sleepList.groupingBy { it.quality }.eachCount()
     }
 
-    val total = sleepList.size.toFloat().coerceAtLeast(1f)
+    val total = remember(sleepList) {
+        sleepList.size.toFloat().coerceAtLeast(1f)
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -183,11 +173,8 @@ fun SleepQualityChart(
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    val strokeWidth = 30f
-                    val radius = (size.minDimension - strokeWidth) / 2
                     var startAngle = -90f
-
-                    SleepQuality.values().forEachIndexed { index, quality ->
+                    SleepQuality.entries.forEach { quality ->
                         val count = qualityCount[quality] ?: 0
                         if (count > 0) {
                             val sweepAngle = 360f * (count / total)
@@ -203,7 +190,7 @@ fun SleepQualityChart(
                                 startAngle = startAngle,
                                 sweepAngle = sweepAngle,
                                 useCenter = false,
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                                style = Stroke(width = 30f, cap = StrokeCap.Round)
                             )
                             startAngle += sweepAngle
                         }
@@ -231,7 +218,7 @@ fun SleepQualityChart(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                SleepQuality.values().forEach { quality ->
+                SleepQuality.entries.forEach { quality ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -268,10 +255,7 @@ fun SleepQualityChart(
 @Composable
 fun SleepScreenContent(
     modifier: Modifier = Modifier,
-    date: ZonedDateTime,
-    sleepList: List<Sleep>,
-    isLoading: Boolean,
-    isTrackingSleep: Boolean,
+    uiState: SleepMainUiState,
     isCurrentWeek: Boolean, 
     onPreviousDate: () -> Unit = {},
     onNextDate: () -> Unit = {},
@@ -283,13 +267,11 @@ fun SleepScreenContent(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            
             IconButton(onClick = onPreviousDate) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -298,7 +280,7 @@ fun SleepScreenContent(
             }
 
             Text(
-                text = "Данные за неделю до ${date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))}",
+                text = "Данные за неделю до ${uiState.date.dateString()}",
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -310,36 +292,30 @@ fun SleepScreenContent(
                     )
                 }
             } else {
-                
                 Spacer(modifier = Modifier.size(48.dp))
             }
         }
 
         if (isCurrentWeek) {
             Button(
-                onClick = if (isTrackingSleep) onStopTracking else onStartTracking,
+                onClick = if (uiState.isTrackingSleep) onStopTracking else onStartTracking,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isTrackingSleep) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    containerColor = if (uiState.isTrackingSleep) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             ) {
-                val buttonText = if (isTrackingSleep) {
-                    "Остановить сон"
-                } else {
-                    "Начать сон"
-                }
-                Text(buttonText)
+                Text(if (uiState.isTrackingSleep) "Остановить сон" else "Начать сон")
             }
         }
 
-        if (isLoading) {
+        if (uiState.isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
-        } else if (sleepList.isEmpty()) {
+        } else if (uiState.sleepList.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -350,11 +326,8 @@ fun SleepScreenContent(
                 )
             }
         } else {
-
-            SleepSummaryCard(sleepList = sleepList)
-
-            SleepQualityChart(sleepList = sleepList)
-
+            SleepSummaryCard(sleepList = uiState.sleepList)
+            SleepQualityChart(sleepList = uiState.sleepList)
             Text(
                 text = "История сна",
                 style = MaterialTheme.typography.titleMedium,
@@ -363,7 +336,7 @@ fun SleepScreenContent(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(sleepList) { sleep ->
+                items(uiState.sleepList) { sleep ->
                     SleepItem(
                         sleep = sleep,
                         onClick = { onSleepItemClick(sleep) }
@@ -380,16 +353,10 @@ fun SleepItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy") }
-
     val durationMinutes = remember(sleep) {
         val duration = Duration.between(sleep.startTime, sleep.endTime)
         if (duration.isNegative) Duration.ZERO.toMinutes() else duration.toMinutes()
     }
-
-    val hours = durationMinutes / 60
-    val minutes = durationMinutes % 60
 
     Surface(
         shape = MaterialTheme.shapes.small,
@@ -409,11 +376,11 @@ fun SleepItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = sleep.startTime.format(dateFormatter),
+                    text = sleep.startTime.dateString(),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "${sleep.startTime.format(timeFormatter)} - ${sleep.endTime.format(timeFormatter)}",
+                    text = "${sleep.startTime.timeString()} - ${sleep.endTime.timeString()}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -423,7 +390,7 @@ fun SleepItem(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "$hours ч $minutes мин",
+                    text = "${durationMinutes / 60} ч ${durationMinutes % 60} мин",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )

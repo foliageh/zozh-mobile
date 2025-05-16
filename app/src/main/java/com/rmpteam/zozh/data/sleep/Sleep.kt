@@ -5,12 +5,12 @@ import androidx.room.PrimaryKey
 import com.rmpteam.zozh.util.DateTimeUtil
 import java.time.ZonedDateTime
 
-@Entity
+//@Entity
 data class Sleep(
-    @PrimaryKey(autoGenerate = true)
-    var id: Long = 0,
-    val startTime: ZonedDateTime = DateTimeUtil.now(),
-    val endTime: ZonedDateTime = DateTimeUtil.now().plusHours(8),
+    //@PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val startTime: ZonedDateTime = DateTimeUtil.now().minusHours(6),
+    val endTime: ZonedDateTime = DateTimeUtil.now(),
     val quality: SleepQuality = SleepQuality.GOOD,
     val notes: String = ""
 )
